@@ -31,8 +31,8 @@ export default function PublicarScreen({ route, navigation }) {
       <MensajeError texto={error} />
       <Tarjeta>
         <View style={styles.tipos}>
-          <Chip texto="Novedad" emoji="💬" clave="novedad-azul" activo={tipo === 'post'} onPress={() => setTipo('post')} />
-          <Chip texto="Convocatoria express" emoji="⚡" clave="convocatoria" activo={tipo === 'convocatoria'} onPress={() => setTipo('convocatoria')} />
+          <Chip texto="Novedad" clave="novedad-azul" activo={tipo === 'post'} onPress={() => setTipo('post')} />
+          <Chip texto="Convocatoria express" clave="convocatoria" activo={tipo === 'convocatoria'} onPress={() => setTipo('convocatoria')} />
         </View>
         <Campo
           etiqueta="¿Qué querés contar?"
@@ -40,10 +40,10 @@ export default function PublicarScreen({ route, navigation }) {
           onChangeText={setContenido}
           multiline
           maxLength={2000}
-          placeholder={tipo === 'convocatoria' ? '¡Necesitamos 3 personas más para el sábado!' : 'Gracias a todos los que vinieron hoy 💛'}
+          placeholder={tipo === 'convocatoria' ? '¡Necesitamos 3 personas más para el sábado!' : 'Gracias a todos los que vinieron hoy'}
         />
         <TextoSuave>{contenido.length}/2000 · Es público: no incluyas datos personales de voluntarios.</TextoSuave>
-        <Boton titulo="Publicar" icono="🚀" onPress={enviar} cargando={enviando} estilo={{ marginTop: 12 }} />
+        <Boton titulo="Publicar" onPress={enviar} cargando={enviando} estilo={{ marginTop: 12 }} />
       </Tarjeta>
     </Pantalla>
   );

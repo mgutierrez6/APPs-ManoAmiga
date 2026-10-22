@@ -53,6 +53,7 @@ export async function guardarSesion({ accessToken: at, refreshToken }) {
 
 export async function limpiarSesion() {
   accessToken = null;
+  reauth = { token: null, expira: 0 };
   await borrarRefreshToken();
 }
 
@@ -80,7 +81,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-const RUTAS_SIN_REINTENTO = ['/auth/login', '/auth/register', '/auth/refresh'];
+const RUTAS_SIN_REINTENTO = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/reauth'];
 
 api.interceptors.response.use(
   (res) => res,
@@ -104,8 +105,50 @@ api.interceptors.response.use(
   }
 );
 
+/* ------------------------------------------------------------------------------------------ */
+/* RS9 · Reautenticación para las acciones del administrador                                   */
+/* ------------------------------------------------------------------------------------------ */
+
+// El token de reauth (5 min) vive SOLO en memoria, igual que el access token.
+let reauth = { token: null, expira: 0 };
+let solicitarReauth = null; // lo registra ReauthProvider: muestra el modal y devuelve { reauthToken, expiraEn }
+
+export function onSolicitarReauth(fn) {
+  solicitarReauth = fn;
+}
+
+export function olvidarReauth() {
+  reauth = { token: null, expira: 0 };
+}
+
+const headersReauth = () => (reauth.token && Date.now() < reauth.expira ? { 'X-Reauth-Token': reauth.token } : {});
+
+/**
+ * Ejecuta una acción sensible del admin. Si no hay token de reauth vigente pide la contraseña (modal)
+ * y lo obtiene; si igual la API responde 403 REAUTH_REQUERIDA, lo pide de nuevo y repite UNA vez.
+ *   await conReauth((headers) => api.post('/admin/organizaciones', datos, { headers }))
+ */
+async function pedirReauth() {
+  const r = await solicitarReauth(); // si la persona cancela, lanza un error con cancelado = true
+  reauth = { token: r.reauthToken, expira: new Date(r.expiraEn).getTime() - 10000 };
+}
+
+export async function conReauth(pedido) {
+  // Si no hay un token vigente, pedimos la contraseña ANTES (así no queda un "denegado" en la auditoría).
+  if (!headersReauth()['X-Reauth-Token'] && solicitarReauth) await pedirReauth();
+  try {
+    return await pedido(headersReauth());
+  } catch (e) {
+    // El token pudo vencer o ser revocado en el medio: se pide una vez más.
+    if (codigoDeError(e) !== 'REAUTH_REQUERIDA' || !solicitarReauth) throw e;
+  }
+  await pedirReauth();
+  return pedido(headersReauth());
+}
+
 /** Convierte cualquier error en un mensaje para mostrar a la persona (3.6). */
 export function mensajeDeError(error) {
+  if (error?.cancelado) return 'Acción cancelada.';
   if (!error?.response) {
     return 'No pudimos conectarnos con el servidor. Revisá tu conexión e intentá de nuevo.';
   }

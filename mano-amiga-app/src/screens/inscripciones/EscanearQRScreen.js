@@ -2,11 +2,10 @@ import { useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Boton, Cargando, TextoSuave } from '../../components/ui';
-import { Anillo, Destello, Flotante, Girando } from '../../components/Decoraciones';
-import { IlustracionMedalla } from '../../components/Ilustraciones';
+import Icono from '../../components/Icono';
 import { registrarAsistenciaQR } from '../../api/asistencias';
 import { mensajeDeError } from '../../api/client';
-import { colores, espacio, fuentes } from '../../constants/tema';
+import { colores, espacio, estilosDinamicos, fuentes } from '../../constants/tema';
 
 /**
  * El voluntario escanea el QR que muestra el coordinador (2.3).
@@ -44,7 +43,7 @@ export default function EscanearQRScreen({ route, navigation }) {
   if (!permiso.granted) {
     return (
       <View style={styles.centro}>
-        <Text style={styles.grande}>📷</Text>
+        <Icono nombre="qr" color={colores.tintaSuave} tamano={56} grosor={1.6} />
         <Text style={styles.texto}>Necesitamos la cámara para escanear el código QR de asistencia.</Text>
         <Boton titulo="Permitir cámara" onPress={pedirPermiso} />
       </View>
@@ -54,13 +53,8 @@ export default function EscanearQRScreen({ route, navigation }) {
   if (estado === 'ok') {
     return (
       <View style={styles.centro}>
-        <Flotante distancia={10} style={{ alignSelf: 'center' }}>
-          <IlustracionMedalla tamano={110} />
-        </Flotante>
-        <View style={styles.destellos}>
-          <Destello color={colores.sol} />
-          <Destello color={colores.coral} tamano={18} />
-          <Destello color={colores.menta} />
+        <View style={styles.okCirculo}>
+          <Icono nombre="check" color={colores.mentaTexto} tamano={56} grosor={2.4} />
         </View>
         <Text style={styles.exito}>¡Asistencia registrada!</Text>
         <Text style={styles.texto}>{mensaje}</Text>
@@ -73,9 +67,7 @@ export default function EscanearQRScreen({ route, navigation }) {
     <View style={styles.contenedor}>
       <Text style={styles.titulo}>{titulo}</Text>
       <View style={styles.marcoExterior}>
-        <Girando style={styles.anillo}>
-          <Anillo tamano={320} color={colores.coral} grosor={6} punteado />
-        </Girando>
+        <View style={styles.anillo} />
         <View style={styles.camaraMarco}>
           {estado !== 'error' ? (
             <CameraView
@@ -87,11 +79,11 @@ export default function EscanearQRScreen({ route, navigation }) {
           ) : null}
         </View>
       </View>
-      {estado === 'enviando' ? <TextoSuave estilo={styles.centrado}>Registrando… ✨</TextoSuave> : null}
-      {estado === 'escaneando' ? <TextoSuave estilo={styles.centrado}>Apuntá al código QR que muestra el coordinador 🎯</TextoSuave> : null}
+      {estado === 'enviando' ? <TextoSuave estilo={styles.centrado}>Registrando…</TextoSuave> : null}
+      {estado === 'escaneando' ? <TextoSuave estilo={styles.centrado}>Apuntá al código QR que muestra el coordinador</TextoSuave> : null}
       {estado === 'error' ? (
         <View style={styles.resultado}>
-          <Text style={[styles.texto, { color: colores.peligro }]}>😕 {mensaje}</Text>
+          <Text style={[styles.texto, { color: colores.peligro }]}>{mensaje}</Text>
           <Boton titulo="Escanear de nuevo" onPress={reintentar} />
           <Boton titulo="Volver" variante="borde" onPress={() => navigation.goBack()} />
         </View>
@@ -100,17 +92,16 @@ export default function EscanearQRScreen({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = estilosDinamicos(() => ({
   contenedor: { flex: 1, backgroundColor: colores.crema, padding: espacio.l, alignItems: 'center' },
   titulo: { fontFamily: fuentes.titulo, fontSize: 22, marginBottom: espacio.l, color: colores.tinta, textAlign: 'center' },
   marcoExterior: { width: 320, height: 320, alignItems: 'center', justifyContent: 'center' },
-  anillo: { position: 'absolute' },
-  camaraMarco: { width: 272, height: 272, borderRadius: 40, overflow: 'hidden', backgroundColor: colores.tinta },
+  anillo: { position: 'absolute', width: 310, height: 310, borderRadius: 52, borderWidth: 3, borderColor: colores.coralSuave },
+  camaraMarco: { width: 272, height: 272, borderRadius: 40, overflow: 'hidden', backgroundColor: colores.tintaFija },
   centrado: { textAlign: 'center', marginTop: espacio.l },
   centro: { flex: 1, justifyContent: 'center', alignItems: 'stretch', padding: espacio.xl, backgroundColor: colores.crema },
-  grande: { fontSize: 64, textAlign: 'center', marginBottom: espacio.m },
-  destellos: { flexDirection: 'row', justifyContent: 'center', gap: 16, marginVertical: espacio.s },
+  okCirculo: { alignSelf: 'center', width: 112, height: 112, borderRadius: 56, backgroundColor: colores.mentaSuave, alignItems: 'center', justifyContent: 'center', marginBottom: espacio.l },
   exito: { fontFamily: fuentes.titulo, fontSize: 28, color: colores.mentaOscuro, textAlign: 'center', marginBottom: espacio.s },
   texto: { fontFamily: fuentes.textoMedio, fontSize: 16, textAlign: 'center', marginBottom: espacio.m, color: colores.tinta },
   resultado: { marginTop: espacio.l, alignSelf: 'stretch' },
-});
+}));

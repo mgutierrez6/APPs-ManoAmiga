@@ -5,7 +5,7 @@ import { Boton, Cargando, MensajeError, Vacio } from '../../components/ui';
 import { useCarga } from '../../hooks/useCarga';
 import { useAuth } from '../../hooks/useAuth';
 import { listarActividades } from '../../api/actividades';
-import { colores, espacio } from '../../constants/tema';
+import { colores, espacio, estilosDinamicos } from '../../constants/tema';
 
 /** Actividades de la organización del coordinador (la API toma la organización del token). */
 export default function MisActividadesScreen({ navigation }) {
@@ -26,12 +26,12 @@ export default function MisActividadesScreen({ navigation }) {
           <Hero
             titulo={`¡Hola, ${usuario.nombre}!`}
             subtitulo={lista.length ? `Tu organización tiene ${publicadas} ${publicadas === 1 ? 'actividad publicada' : 'actividades publicadas'}` : 'Creá la primera actividad de tu organización'}
-            emoji="🗂"
+           
             tema="oceano"
             figuras={0}
           />
           <View style={styles.relleno}>
-            <Boton titulo="Nueva actividad" icono="✨" onPress={() => navigation.navigate('ActividadForm')} estilo={{ marginTop: espacio.m }} />
+            <Boton titulo="Nueva actividad" onPress={() => navigation.navigate('ActividadForm')} estilo={{ marginTop: espacio.m }} />
             <MensajeError texto={error} onReintentar={recargar} />
           </View>
         </>
@@ -46,8 +46,8 @@ export default function MisActividadesScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = estilosDinamicos(() => ({
   contenedor: { flex: 1, backgroundColor: colores.crema },
   lista: { paddingBottom: espacio.xl, flexGrow: 1 },
   relleno: { paddingHorizontal: espacio.l },
-});
+}));

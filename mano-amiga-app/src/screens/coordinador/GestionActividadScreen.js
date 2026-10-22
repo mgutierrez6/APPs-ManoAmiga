@@ -1,14 +1,12 @@
 import { useCallback, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Aparecer, Avatar, Boton, Cargando, EstadoBadge, MensajeError, Subtitulo, Tarjeta, TextoSuave } from '../../components/ui';
-import { FigurasEncabezado } from '../../components/Decoraciones';
 import { useCarga } from '../../hooks/useCarga';
 import { cancelarActividad, obtenerActividad } from '../../api/actividades';
 import { cambiarEstadoInscripcion, inscriptosDeActividad } from '../../api/inscripciones';
 import { asistenciaManual, asistenciasDeActividad, validarAsistencia } from '../../api/asistencias';
 import { mensajeDeError } from '../../api/client';
-import { colores, espacio, familiaPara, fuentes } from '../../constants/tema';
+import { colores, espacio, estilosDinamicos, familiaPara, fuentes } from '../../constants/tema';
 import { fechaHora, rangoFechas } from '../../utils/formato';
 
 /**
@@ -67,12 +65,11 @@ export default function GestionActividadScreen({ route, navigation }) {
       contentContainerStyle={styles.contenido}
       refreshControl={<RefreshControl refreshing={cargando} onRefresh={recargar} tintColor={colores.coral} />}
     >
-      <LinearGradient colors={[f.base, f.oscuro]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.portada}>
-        <FigurasEncabezado variante={1} />
+      <View style={[styles.portada, { backgroundColor: f.base }]}>
         <EstadoBadge estado={act.estado} />
         <Text style={[styles.titulo, { color: f.texto }]}>{act.titulo}</Text>
-        <Text style={[styles.subtitulo, { color: f.texto }]}>🗓 {rangoFechas(act.fechaInicio, act.fechaFin)}</Text>
-      </LinearGradient>
+        <Text style={[styles.subtitulo, { color: f.texto }]}>{rangoFechas(act.fechaInicio, act.fechaFin)}</Text>
+      </View>
 
       {/* Contadores */}
       <View style={styles.contadores}>
@@ -83,12 +80,12 @@ export default function GestionActividadScreen({ route, navigation }) {
 
       {activa ? (
         <View style={styles.acciones}>
-          <Boton titulo="Mostrar QR de asistencia" icono="📲" onPress={() => navigation.navigate('MostrarQR', { id, titulo: act.titulo })} />
+          <Boton titulo="Mostrar QR de asistencia" onPress={() => navigation.navigate('MostrarQR', { id, titulo: act.titulo })} />
           <View style={styles.fila}>
-            <Boton titulo="Editar" icono="✏️" variante="sol" chico estilo={styles.mitad} onPress={() => navigation.navigate('ActividadForm', { id })} />
+            <Boton titulo="Editar" variante="sol" chico estilo={styles.mitad} onPress={() => navigation.navigate('ActividadForm', { id })} />
             <Boton
               titulo="Comunidad"
-              icono="💬"
+             
               variante="secundario"
               chico
               estilo={styles.mitad}
@@ -99,7 +96,7 @@ export default function GestionActividadScreen({ route, navigation }) {
       ) : null}
 
       <Subtitulo>Inscriptos ({inscriptos.length})</Subtitulo>
-      {inscriptos.length === 0 ? <TextoSuave>Todavía no hay inscriptos. ¡Compartí la actividad! 📢</TextoSuave> : null}
+      {inscriptos.length === 0 ? <TextoSuave>Todavía no hay inscriptos. ¡Compartí la actividad!</TextoSuave> : null}
       {inscriptos.map((ins, i) => {
         const asis = asistenciaDe(ins.id);
         return (
@@ -111,30 +108,30 @@ export default function GestionActividadScreen({ route, navigation }) {
                   <Text style={styles.nombre}>
                     {ins.voluntario.nombre} {ins.voluntario.apellido}
                   </Text>
-                  {ins.voluntario.telefono ? <TextoSuave>📞 {ins.voluntario.telefono}</TextoSuave> : null}
-                  {ins.voluntario.esJudicial ? <TextoSuave>⚖️ Programa judicial</TextoSuave> : null}
+                  {ins.voluntario.telefono ? <TextoSuave>{ins.voluntario.telefono}</TextoSuave> : null}
+                  {ins.voluntario.esJudicial ? <TextoSuave>Programa judicial</TextoSuave> : null}
                 </View>
                 <EstadoBadge estado={ins.estado} />
               </View>
               {asis ? (
                 <View style={styles.asistencia}>
                   <Text style={styles.asistenciaTexto}>
-                    {asis.estado === 'validada' ? `🏅 Asistencia validada · ${asis.horas} h` : `🕒 Entró ${fechaHora(asis.checkIn)} · falta validar`}
+                    {asis.estado === 'validada' ? `Asistencia validada · ${asis.horas} h` : `Entró ${fechaHora(asis.checkIn)} · falta validar`}
                   </Text>
                 </View>
               ) : null}
 
               {ins.estado === 'pendiente' ? (
                 <View style={styles.fila}>
-                  <Boton titulo="Aceptar" icono="✅" variante="exito" chico estilo={styles.mitad} onPress={() => accion(`ac-${ins.id}`, () => cambiarEstadoInscripcion(ins.id, 'aceptada'))} cargando={ocupado === `ac-${ins.id}`} />
+                  <Boton titulo="Aceptar" variante="exito" chico estilo={styles.mitad} onPress={() => accion(`ac-${ins.id}`, () => cambiarEstadoInscripcion(ins.id, 'aceptada'))} cargando={ocupado === `ac-${ins.id}`} />
                   <Boton titulo="Rechazar" variante="borde" chico estilo={styles.mitad} onPress={() => accion(`re-${ins.id}`, () => cambiarEstadoInscripcion(ins.id, 'rechazada'))} cargando={ocupado === `re-${ins.id}`} />
                 </View>
               ) : null}
               {ins.estado === 'aceptada' && !asis ? (
-                <Boton titulo="Registrar asistencia manual" icono="✍️" variante="borde" chico onPress={() => manual(ins)} cargando={ocupado === `man-${ins.id}`} />
+                <Boton titulo="Registrar asistencia manual" variante="borde" chico onPress={() => manual(ins)} cargando={ocupado === `man-${ins.id}`} />
               ) : null}
               {asis && asis.estado === 'abierta' ? (
-                <Boton titulo="Validar asistencia" icono="🏁" variante="secundario" chico onPress={() => accion(`val-${asis.id}`, () => validarAsistencia(asis.id))} cargando={ocupado === `val-${asis.id}`} />
+                <Boton titulo="Validar asistencia" variante="secundario" chico onPress={() => accion(`val-${asis.id}`, () => validarAsistencia(asis.id))} cargando={ocupado === `val-${asis.id}`} />
               ) : null}
             </Tarjeta>
           </Aparecer>
@@ -155,7 +152,7 @@ function Contador({ numero, texto, color }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = estilosDinamicos(() => ({
   contenedor: { flex: 1, backgroundColor: colores.crema },
   contenido: { padding: espacio.l, paddingBottom: espacio.xxl },
   portada: { borderRadius: 28, padding: espacio.l, overflow: 'hidden', marginBottom: espacio.m, minHeight: 150, justifyContent: 'flex-end' },
@@ -172,4 +169,4 @@ const styles = StyleSheet.create({
   nombre: { fontFamily: fuentes.tituloMedio, fontSize: 16, color: colores.tinta },
   asistencia: { backgroundColor: colores.crema, borderRadius: 12, padding: 10, marginBottom: espacio.s },
   asistenciaTexto: { fontFamily: fuentes.textoMedio, color: colores.tinta },
-});
+}));

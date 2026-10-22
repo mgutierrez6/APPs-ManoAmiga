@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Easing, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { colores, estilosEstado, espacio, familiaPara, fuentes, radio, sombra } from '../constants/tema';
+import { colores, espacio, estilosDinamicos, estilosEstado, familiaPara, fuentes, radio, sombra } from '../constants/tema';
 import { estadoTexto } from '../utils/formato';
-import { IlustracionVacia } from './Ilustraciones';
+import { LogoMarca } from './Logo';
 
 /* ------------------------------------------------------------------ */
 /* Texto                                                               */
@@ -24,25 +24,29 @@ export function Subtitulo({ children, estilo }) {
   return <Text style={[styles.subtitulo, estilo]}>{children}</Text>;
 }
 
-export function TextoSuave({ children, estilo }) {
-  return <Text style={[styles.textoSuave, estilo]}>{children}</Text>;
+export function TextoSuave({ children, estilo, ...props }) {
+  return (
+    <Text style={[styles.textoSuave, estilo]} {...props}>
+      {children}
+    </Text>
+  );
 }
 
 /* ------------------------------------------------------------------ */
 /* Botón "3D": tiene un borde inferior más oscuro que se hunde al tocar */
 /* ------------------------------------------------------------------ */
 
-const VARIANTES = {
+const VARIANTES = estilosDinamicos(() => ({
   primario: { fondo: colores.coral, sombra: colores.coralOscuro, texto: colores.blanco },
   secundario: { fondo: colores.oceano, sombra: colores.oceanoOscuro, texto: colores.blanco },
-  exito: { fondo: colores.menta, sombra: colores.mentaOscuro, texto: colores.tinta },
-  sol: { fondo: colores.sol, sombra: colores.solOscuro, texto: colores.tinta },
+  exito: { fondo: colores.menta, sombra: colores.mentaOscuro, texto: colores.tintaFija },
+  sol: { fondo: colores.sol, sombra: colores.solOscuro, texto: colores.tintaFija },
   lila: { fondo: colores.lila, sombra: colores.lilaOscuro, texto: colores.blanco },
   peligro: { fondo: colores.peligro, sombra: '#A3173A', texto: colores.blanco },
-  borde: { fondo: colores.blanco, sombra: colores.borde, texto: colores.tinta, borde: colores.tinta },
-};
+  borde: { fondo: colores.tarjeta, sombra: colores.borde, texto: colores.tinta, borde: colores.tinta },
+}));
 
-export function Boton({ titulo, onPress, variante = 'primario', cargando = false, deshabilitado = false, estilo, icono, chico = false }) {
+export function Boton({ titulo, onPress, variante = 'primario', cargando = false, deshabilitado = false, estilo, chico = false }) {
   const v = VARIANTES[variante] || VARIANTES.primario;
   const escala = useRef(new Animated.Value(1)).current;
   const inactivo = deshabilitado || cargando;
@@ -67,8 +71,8 @@ export function Boton({ titulo, onPress, variante = 'primario', cargando = false
               {
                 backgroundColor: v.fondo,
                 borderBottomColor: v.sombra,
-                borderBottomWidth: pressed ? 2 : 5,
-                marginTop: pressed ? 3 : 0,
+                borderBottomWidth: pressed ? 1 : 3,
+                marginTop: pressed ? 2 : 0,
                 opacity: inactivo ? 0.55 : 1,
               },
               v.borde && { borderWidth: 2, borderColor: v.borde, borderBottomColor: v.borde },
@@ -78,7 +82,6 @@ export function Boton({ titulo, onPress, variante = 'primario', cargando = false
               <ActivityIndicator color={v.texto} />
             ) : (
               <Text style={[styles.botonTexto, chico && styles.botonTextoChico, { color: v.texto }]}>
-                {icono ? `${icono}  ` : ''}
                 {titulo}
               </Text>
             )}
@@ -93,13 +96,12 @@ export function Boton({ titulo, onPress, variante = 'primario', cargando = false
 /* Formularios                                                         */
 /* ------------------------------------------------------------------ */
 
-export function Campo({ etiqueta, error, icono, onFocus, onBlur, ...props }) {
+export function Campo({ etiqueta, error, icono: _icono, onFocus, onBlur, ...props }) {
   const [foco, setFoco] = useState(false);
   return (
     <View style={styles.campo}>
       {etiqueta ? <Text style={styles.etiqueta}>{etiqueta}</Text> : null}
       <View style={[styles.inputCaja, foco && styles.inputFoco, error && styles.inputError, props.multiline && styles.inputMultilinea]}>
-        {icono ? <Text style={styles.inputIcono}>{icono}</Text> : null}
         <TextInput
           placeholderTextColor={colores.gris}
           style={[styles.input, props.multiline && { minHeight: 90, textAlignVertical: 'top' }]}
@@ -156,7 +158,7 @@ export function Aparecer({ children, indice = 0, estilo }) {
 /* ------------------------------------------------------------------ */
 
 /** Chip de color. "clave" decide el color (misma etiqueta = mismo color siempre). */
-export function Chip({ texto, activo = false, onPress, emoji, clave }) {
+export function Chip({ texto, activo = false, onPress, clave }) {
   const f = familiaPara(clave ?? texto);
   return (
     <Pressable
@@ -164,12 +166,11 @@ export function Chip({ texto, activo = false, onPress, emoji, clave }) {
       disabled={!onPress}
       style={({ pressed }) => [
         styles.chip,
-        { backgroundColor: activo ? f.base : f.suave, borderColor: activo ? f.oscuro : 'transparent' },
+        { backgroundColor: f.suave, borderColor: activo ? f.textoSuave : 'transparent' },
         pressed && { transform: [{ scale: 0.95 }] },
       ]}
     >
-      <Text style={[styles.chipTexto, { color: activo ? f.texto : colores.tinta }]}>
-        {emoji ? `${emoji} ` : ''}
+      <Text style={[styles.chipTexto, { color: activo ? f.textoSuave : colores.tinta }]}>
         {texto}
       </Text>
     </Pressable>
@@ -177,11 +178,11 @@ export function Chip({ texto, activo = false, onPress, emoji, clave }) {
 }
 
 export function EstadoBadge({ estado }) {
-  const e = estilosEstado[estado] || { fondo: '#ECEFF1', texto: colores.tintaSuave, emoji: '•' };
+  const e = estilosEstado[estado] || { fondo: colores.neutroSuave, texto: colores.tintaSuave };
   return (
     <View style={[styles.badge, { backgroundColor: e.fondo }]}>
       <Text style={[styles.badgeTexto, { color: e.texto }]}>
-        {e.emoji} {estadoTexto[estado] || estado}
+        {estadoTexto[estado] || estado}
       </Text>
     </View>
   );
@@ -189,7 +190,7 @@ export function EstadoBadge({ estado }) {
 
 export function Avatar({ nombre = '', apellido = '', tamano = 44 }) {
   const f = familiaPara(`${nombre}${apellido}`);
-  const iniciales = `${(nombre[0] || '').toUpperCase()}${(apellido[0] || '').toUpperCase()}` || '🙂';
+  const iniciales = `${(nombre[0] || '').toUpperCase()}${(apellido[0] || '').toUpperCase()}` || '?';
   return (
     <View style={[styles.avatar, { width: tamano, height: tamano, borderRadius: tamano / 2, backgroundColor: f.base }]}>
       <Text style={[styles.avatarTexto, { color: f.texto, fontSize: tamano * 0.38 }]}>{iniciales}</Text>
@@ -210,13 +211,12 @@ export function BarraProgreso({ valor = 0, total = 1, color = colores.menta }) {
   );
 }
 
-/** Pastilla de información: emoji + texto sobre un tinte de color. */
-export function Pastilla({ emoji, texto, clave, estilo }) {
+/** Pastilla de información: texto sobre un tinte de color. */
+export function Pastilla({ texto, clave, estilo }) {
   const f = familiaPara(clave ?? texto);
   return (
     <View style={[styles.pastilla, { backgroundColor: f.suave }, estilo]}>
       <Text style={styles.pastillaTexto}>
-        {emoji ? `${emoji}  ` : ''}
         {texto}
       </Text>
     </View>
@@ -227,7 +227,7 @@ export function Pastilla({ emoji, texto, clave, estilo }) {
 /* Estados de pantalla                                                 */
 /* ------------------------------------------------------------------ */
 
-/** Tres puntitos de colores que rebotan. */
+/** Tres puntitos que rebotan (indicador de carga). */
 export function Cargando() {
   const puntos = [useRef(new Animated.Value(0)).current, useRef(new Animated.Value(0)).current, useRef(new Animated.Value(0)).current];
   useEffect(() => {
@@ -264,16 +264,16 @@ export function MensajeError({ texto, onReintentar }) {
   if (!texto) return null;
   return (
     <View style={styles.error}>
-      <Text style={styles.errorTexto}>😕 {texto}</Text>
+      <Text style={styles.errorTexto}>{texto}</Text>
       {onReintentar ? <Boton titulo="Reintentar" variante="borde" chico onPress={onReintentar} /> : null}
     </View>
   );
 }
 
-export function Vacio({ texto, titulo = '¡Nada por acá todavía!' }) {
+export function Vacio({ texto, titulo = 'Nada por acá todavía' }) {
   return (
     <View style={styles.vacio}>
-      <IlustracionVacia />
+      <LogoMarca tamano={64} opacidad={0.35} />
       <Text style={styles.vacioTitulo}>{titulo}</Text>
       <Text style={[styles.textoSuave, { textAlign: 'center' }]}>{texto}</Text>
     </View>
@@ -282,7 +282,7 @@ export function Vacio({ texto, titulo = '¡Nada por acá todavía!' }) {
 
 /* ------------------------------------------------------------------ */
 
-const styles = StyleSheet.create({
+const styles = estilosDinamicos(() => ({
   texto: { fontFamily: fuentes.texto, fontSize: 15, color: colores.tinta },
   titulo: { fontFamily: fuentes.titulo, fontSize: 26, color: colores.tinta, marginBottom: espacio.xs },
   subtitulo: { fontFamily: fuentes.tituloMedio, fontSize: 19, color: colores.tinta, marginTop: espacio.l, marginBottom: espacio.s },
@@ -299,25 +299,25 @@ const styles = StyleSheet.create({
   inputCaja: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: colores.borde,
     borderRadius: 16,
-    backgroundColor: colores.blanco,
+    backgroundColor: colores.tarjeta,
     paddingHorizontal: espacio.m,
   },
-  inputFoco: { borderColor: colores.coral, backgroundColor: '#FFFDFB' },
+  inputFoco: { borderColor: colores.oceano, backgroundColor: colores.campoFoco },
   inputError: { borderColor: colores.peligro },
   inputMultilinea: { alignItems: 'flex-start', paddingTop: 4 },
   inputIcono: { fontSize: 18, marginRight: 8 },
   input: { flex: 1, paddingVertical: 12, fontSize: 16, color: colores.tinta, fontFamily: fuentes.textoMedio },
   textoError: { fontFamily: fuentes.textoMedio, color: colores.peligro, marginTop: espacio.xs, marginLeft: 4 },
 
-  tarjeta: { backgroundColor: colores.tarjeta, borderRadius: radio + 4, padding: espacio.l, marginBottom: espacio.m, ...sombra },
+  tarjeta: { backgroundColor: colores.tarjeta, borderRadius: radio, padding: espacio.l, marginBottom: espacio.m, borderWidth: 1, borderColor: colores.borde, ...sombra },
   tarjetaConAcento: { paddingLeft: espacio.l + 8, overflow: 'hidden' },
   tarjetaPresionada: { transform: [{ scale: 0.98 }] },
-  acento: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 8 },
+  acento: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 5 },
 
-  chip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999, marginRight: espacio.s, marginBottom: espacio.s, borderWidth: 2 },
+  chip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999, marginRight: espacio.s, marginBottom: espacio.s, borderWidth: 1.5 },
   chipTexto: { fontFamily: fuentes.negrita, fontSize: 13 },
 
   badge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
   avatar: { alignItems: 'center', justifyContent: 'center' },
   avatarTexto: { fontFamily: fuentes.titulo },
 
-  barra: { height: 10, borderRadius: 999, backgroundColor: '#F1E8DA', overflow: 'hidden' },
+  barra: { height: 10, borderRadius: 999, backgroundColor: colores.pista, overflow: 'hidden' },
   barraRelleno: { height: '100%', borderRadius: 999 },
 
   pastilla: { flexDirection: 'row', alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14, marginRight: 8, marginBottom: 8 },
@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
   fila: { flexDirection: 'row', gap: 10 },
   punto: { width: 14, height: 14, borderRadius: 7 },
   error: { backgroundColor: colores.coralSuave, padding: espacio.m, borderRadius: 18, marginBottom: espacio.m },
-  errorTexto: { fontFamily: fuentes.textoMedio, color: '#A3173A', marginBottom: espacio.xs },
+  errorTexto: { fontFamily: fuentes.textoMedio, color: colores.coralTexto, marginBottom: espacio.xs },
   vacio: { alignItems: 'center', paddingVertical: espacio.xl, paddingHorizontal: espacio.l },
   vacioTitulo: { fontFamily: fuentes.titulo, fontSize: 20, color: colores.tinta, marginTop: espacio.m, marginBottom: espacio.xs },
-});
+}));

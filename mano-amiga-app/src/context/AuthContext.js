@@ -62,7 +62,24 @@ export function AuthProvider({ children }) {
     await cerrarLocal();
   }, [cerrarLocal]);
 
-  const valor = useMemo(() => ({ usuario, cargando, login, registrar, logout }), [usuario, cargando, login, registrar, logout]);
+  /** Mezcla datos nuevos del usuario (ej.: después de editar el perfil o cambiar el tema). */
+  const actualizarUsuario = useCallback((cambios) => {
+    setUsuario((u) => (u ? { ...u, ...cambios, preferencias: { ...u.preferencias, ...(cambios.preferencias || {}) } } : u));
+  }, []);
+
+  /**
+   * Reemplaza la sesión por una nueva (ej.: al cambiar la contraseña el servidor cierra TODAS las
+   * sesiones -RS5- y devuelve tokens nuevos solo para este dispositivo).
+   */
+  const reemplazarSesion = useCallback(async (data) => {
+    await guardarSesion(data);
+    if (data.usuario) setUsuario(data.usuario);
+  }, []);
+
+  const valor = useMemo(
+    () => ({ usuario, cargando, login, registrar, logout, actualizarUsuario, reemplazarSesion }),
+    [usuario, cargando, login, registrar, logout, actualizarUsuario, reemplazarSesion]
+  );
 
   return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>;
 }

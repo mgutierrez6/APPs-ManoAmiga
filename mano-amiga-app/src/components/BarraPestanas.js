@@ -1,12 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colores, espacio, fuentes, sombra } from '../constants/tema';
+import { colores, espacio, estilosDinamicos, fuentes, sombra } from '../constants/tema';
+import Icono from './Icono';
 
-// Color de la "burbuja" de cada pestaña activa (en orden).
-const TONOS = [colores.coral, colores.sol, colores.menta, colores.lila, colores.oceano];
+// Familia de color de la "burbuja" de cada pestaña activa (en orden).
+const TONOS = ['coral'];
 
-/** Barra de pestañas flotante: la pestaña activa se agranda en una burbuja de color con su nombre. */
+/** Barra de pestañas flotante: la pestaña activa se agranda en una burbuja coral con su nombre. */
 export default function BarraPestanas({ state, descriptors, navigation }) {
   const insets = useSafeAreaInsets();
   return (
@@ -24,7 +25,7 @@ export default function BarraPestanas({ state, descriptors, navigation }) {
             <Pestana
               key={route.key}
               activa={activa}
-              emoji={options.tabBarEmoji || '•'}
+              icono={options.tabBarIcono}
               etiqueta={etiqueta}
               tono={TONOS[i % TONOS.length]}
               onPress={alTocar}
@@ -36,22 +37,21 @@ export default function BarraPestanas({ state, descriptors, navigation }) {
   );
 }
 
-function Pestana({ activa, emoji, etiqueta, tono, onPress }) {
+function Pestana({ activa, icono, etiqueta, tono, onPress }) {
   const v = useRef(new Animated.Value(activa ? 1 : 0)).current;
   useEffect(() => {
     Animated.spring(v, { toValue: activa ? 1 : 0, useNativeDriver: false, speed: 18, bounciness: 9 }).start();
   }, [activa, v]);
 
-  const fondo = v.interpolate({ inputRange: [0, 1], outputRange: ['rgba(0,0,0,0)', tono] });
-  const escala = v.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] });
-  const textoOscuro = tono === colores.sol || tono === colores.menta;
+  const fondo = v.interpolate({ inputRange: [0, 1], outputRange: ['rgba(0,0,0,0)', colores[tono]] });
+  const colorActivo = colores.blanco;
 
   return (
     <Pressable accessibilityRole="tab" accessibilityState={{ selected: activa }} accessibilityLabel={etiqueta} onPress={onPress} style={[styles.pestana, activa && styles.pestanaActiva]}>
       <Animated.View style={[styles.burbuja, { backgroundColor: fondo }]}>
-        <Animated.Text style={[styles.emoji, { transform: [{ scale: escala }] }]}>{emoji}</Animated.Text>
+        <Icono nombre={icono} color={activa ? colorActivo : colores.tintaSuave} tamano={22} />
         {activa ? (
-          <Text numberOfLines={1} style={[styles.etiqueta, { color: textoOscuro ? colores.tinta : colores.blanco }]}>
+          <Text numberOfLines={1} style={[styles.etiqueta, { color: colorActivo }]}>
             {etiqueta}
           </Text>
         ) : null}
@@ -60,19 +60,19 @@ function Pestana({ activa, emoji, etiqueta, tono, onPress }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = estilosDinamicos(() => ({
   contenedor: { backgroundColor: colores.crema, paddingHorizontal: espacio.m, paddingTop: espacio.s },
   barra: {
     flexDirection: 'row',
-    backgroundColor: colores.blanco,
+    backgroundColor: colores.tarjeta,
     borderRadius: 999,
     padding: 6,
+    borderWidth: 1,
+    borderColor: colores.borde,
     ...sombra,
-    shadowOpacity: 0.12,
   },
   pestana: { flex: 1, alignItems: 'center' },
   pestanaActiva: { flex: 2.2 },
   burbuja: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 999, paddingVertical: 10, paddingHorizontal: 12, alignSelf: 'stretch' },
-  emoji: { fontSize: 20 },
   etiqueta: { fontFamily: fuentes.negrita, fontSize: 13, marginLeft: 6, flexShrink: 1 },
-});
+}));

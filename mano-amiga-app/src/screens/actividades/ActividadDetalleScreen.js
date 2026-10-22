@@ -1,15 +1,13 @@
 import { useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import Pantalla from '../../components/Pantalla';
 import { Aparecer, BarraProgreso, Boton, Cargando, Chip, MensajeError, Pastilla, Tarjeta } from '../../components/ui';
-import { FigurasEncabezado, Flotante } from '../../components/Decoraciones';
 import { useCarga } from '../../hooks/useCarga';
 import { useAuth } from '../../hooks/useAuth';
 import { obtenerActividad } from '../../api/actividades';
 import { inscribirme } from '../../api/inscripciones';
 import { mensajeDeError } from '../../api/client';
-import { colores, emojiEtiqueta, espacio, familiaPara, fuentes } from '../../constants/tema';
+import { colores, espacio, estilosDinamicos, familiaPara, fuentes } from '../../constants/tema';
 import { rangoFechas } from '../../utils/formato';
 
 export default function ActividadDetalleScreen({ route, navigation }) {
@@ -22,7 +20,7 @@ export default function ActividadDetalleScreen({ route, navigation }) {
     setEnviando(true);
     try {
       await inscribirme(id);
-      Alert.alert('¡Genial! 🎉', 'Te inscribiste. El coordinador tiene que aceptar tu inscripción; lo vas a ver en "Inscripciones".');
+      Alert.alert('¡Genial!', 'Te inscribiste. El coordinador tiene que aceptar tu inscripción; lo vas a ver en "Inscripciones".');
       recargar();
     } catch (e) {
       Alert.alert('No se pudo inscribir', mensajeDeError(e));
@@ -41,27 +39,23 @@ export default function ActividadDetalleScreen({ route, navigation }) {
   return (
     <Pantalla>
       <Aparecer>
-        <LinearGradient colors={[f.base, f.oscuro]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.portada}>
-          <FigurasEncabezado variante={2} />
-          <Flotante distancia={8}>
-            <Text style={styles.portadaEmoji}>{emojiEtiqueta(act.etiquetas[0]?.nombre)}</Text>
-          </Flotante>
+        <View style={[styles.portada, { backgroundColor: f.base }]}>
           <Text style={[styles.titulo, { color: f.texto }]}>{act.titulo}</Text>
-          <Text style={[styles.org, { color: f.texto }]}>🏢 {act.organizacion?.nombre}</Text>
-        </LinearGradient>
+          <Text style={[styles.org, { color: f.texto }]}>{act.organizacion?.nombre}</Text>
+        </View>
       </Aparecer>
 
       <Aparecer indice={1}>
         <View style={styles.pastillas}>
-          <Pastilla emoji="🗓" texto={rangoFechas(act.fechaInicio, act.fechaFin)} clave="fecha" />
-          {act.direccion ? <Pastilla emoji="📍" texto={act.direccion} clave="lugar" /> : null}
+          <Pastilla texto={rangoFechas(act.fechaInicio, act.fechaFin)} clave="fecha" />
+          {act.direccion ? <Pastilla texto={act.direccion} clave="lugar" /> : null}
         </View>
       </Aparecer>
 
       <Aparecer indice={2}>
         <Tarjeta>
           <View style={styles.cuposFila}>
-            <Text style={styles.cuposTitulo}>👥 Lugares</Text>
+            <Text style={styles.cuposTitulo}>Lugares</Text>
             <Text style={styles.cuposNumero}>
               {act.cuposLibres} libres de {act.cupo}
             </Text>
@@ -76,7 +70,7 @@ export default function ActividadDetalleScreen({ route, navigation }) {
           <Text style={styles.descripcion}>{act.descripcion}</Text>
           <View style={styles.etiquetas}>
             {act.etiquetas.map((e) => (
-              <Chip key={e.id} texto={e.nombre} clave={e.nombre} emoji={emojiEtiqueta(e.nombre)} />
+              <Chip key={e.id} texto={e.nombre} clave={e.nombre} />
             ))}
           </View>
         </Tarjeta>
@@ -85,7 +79,7 @@ export default function ActividadDetalleScreen({ route, navigation }) {
       {usuario.rol === 'voluntario' ? (
         <Boton
           titulo={act.cuposLibres > 0 ? '¡Me sumo!' : 'Sin cupos'}
-          icono={act.cuposLibres > 0 ? '🙋' : '😢'}
+          
           onPress={inscribir}
           cargando={enviando}
           deshabilitado={act.cuposLibres === 0}
@@ -93,7 +87,7 @@ export default function ActividadDetalleScreen({ route, navigation }) {
       ) : null}
       <Boton
         titulo="Ver la comunidad"
-        icono="💬"
+       
         variante="secundario"
         onPress={() => navigation.navigate('Feed', { proyectoId: act.id, titulo: act.titulo, organizacionId: act.organizacionId })}
       />
@@ -101,9 +95,8 @@ export default function ActividadDetalleScreen({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = estilosDinamicos(() => ({
   portada: { borderRadius: 30, padding: espacio.l, paddingTop: espacio.xl, overflow: 'hidden', marginBottom: espacio.m, minHeight: 190, justifyContent: 'flex-end' },
-  portadaEmoji: { fontSize: 52, marginBottom: espacio.s },
   titulo: { fontFamily: fuentes.titulo, fontSize: 28, lineHeight: 32 },
   org: { fontFamily: fuentes.textoMedio, fontSize: 15, marginTop: 4, opacity: 0.95 },
   pastillas: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: espacio.xs },
@@ -113,4 +106,4 @@ const styles = StyleSheet.create({
   seccion: { fontFamily: fuentes.tituloMedio, fontSize: 18, color: colores.tinta, marginBottom: 6 },
   descripcion: { fontFamily: fuentes.texto, fontSize: 15, lineHeight: 23, color: colores.tinta, marginBottom: espacio.m },
   etiquetas: { flexDirection: 'row', flexWrap: 'wrap' },
-});
+}));

@@ -51,16 +51,16 @@ export default function CrearCampanaScreen({ navigation }) {
   return (
     <Pantalla>
       <MensajeError texto={error} />
-      <Subtitulo estilo={{ marginTop: 0 }}>📦 La campaña</Subtitulo>
+      <Subtitulo estilo={{ marginTop: 0 }}>La campaña</Subtitulo>
       <Tarjeta>
       <Campo etiqueta="Título" value={titulo} onChangeText={setTitulo} maxLength={100} />
       <Campo etiqueta="Descripción" value={descripcion} onChangeText={setDescripcion} multiline maxLength={2000} />
-      <Campo etiqueta="Objetivo (ej: 200 prendas de abrigo)" icono="🎯" value={objetivo} onChangeText={setObjetivo} maxLength={300} />
+      <Campo etiqueta="Objetivo (ej: 200 prendas de abrigo)" value={objetivo} onChangeText={setObjetivo} maxLength={300} />
       <FechaHoraInput etiqueta="Inicio" valor={inicio} onChange={setInicio} />
       <FechaHoraInput etiqueta="Fin" valor={fin} onChange={setFin} />
       </Tarjeta>
 
-      <Subtitulo>📍 Puntos de acopio</Subtitulo>
+      <Subtitulo>Puntos de acopio</Subtitulo>
       <TextoSuave estilo={{ marginBottom: espacio.s }}>
         Solo ubicaciones institucionales (sede, parroquia, club…). Las coordenadas se copian de Google Maps (mantené apretado el lugar).
       </TextoSuave>
@@ -78,8 +78,8 @@ export default function CrearCampanaScreen({ navigation }) {
           </View>
         </Tarjeta>
       ))}
-       <Boton titulo="Agregar otro punto" icono="➕" variante="borde" onPress={() => setPuntos((ps) => [...ps, puntoVacio()])} />
-      <Boton titulo="Publicar campaña" icono="🚀" onPress={enviar} cargando={enviando} />
+       <Boton titulo="Agregar otro punto" variante="borde" onPress={() => setPuntos((ps) => [...ps, puntoVacio()])} />
+      <Boton titulo="Publicar campaña" onPress={enviar} cargando={enviando} />
     </Pantalla>
   );
 }

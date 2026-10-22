@@ -1,71 +1,38 @@
-import { StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FigurasEncabezado, Flotante } from './Decoraciones';
-import { colores, espacio, fuentes } from '../constants/tema';
+import { colores, espacio, estilosDinamicos, fuentes } from '../constants/tema';
 
-export const DEGRADES = {
-  coral: { colores: ['#EF476F', '#FF8A5B'], texto: colores.blanco },
-  oceano: { colores: ['#118AB2', '#06D6A0'], texto: colores.blanco },
-  lila: { colores: ['#9B5DE5', '#EF476F'], texto: colores.blanco },
-  sol: { colores: ['#FFB703', '#FFD166'], texto: colores.tinta },
-  menta: { colores: ['#06D6A0', '#118AB2'], texto: colores.blanco },
-};
+// Texto legible sobre cada color de marca (igual que en los botones).
+const SOBRE = { coral: 'blanco', oceano: 'blanco', lila: 'blanco', sol: 'tintaFija', menta: 'tintaFija' };
 
 /**
- * Encabezado grande de color con degradé, figuras animadas y un emoji "sticker".
- * Se usa arriba de las pantallas principales (las pestañas). Con "conSafeArea" deja lugar para la barra de estado.
+ * Encabezado de las pantallas principales (las pestañas): el color de la sección, plano,
+ * con el texto en blanco o tinta según contraste. Sin degradés, figuras ni emojis.
+ * "tema" es una familia de color: coral, oceano, lila, sol o menta.
+ * Las props "emoji" y "figuras" se aceptan por compatibilidad pero ya no se dibujan.
  */
-export default function Hero({ titulo, subtitulo, emoji, tema = 'coral', figuras = 0, conSafeArea = true, children, compacto = false }) {
+export default function Hero({ titulo, subtitulo, tema = 'coral', conSafeArea = true, children, compacto = false }) {
   const insets = useSafeAreaInsets();
-  const d = DEGRADES[tema] || DEGRADES.coral;
+  const clave = SOBRE[tema] ? tema : 'coral';
+  const fondo = colores[clave];
+  const texto = colores[SOBRE[clave]];
   return (
-    <LinearGradient
-      colors={d.colores}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={[styles.hero, { paddingTop: (conSafeArea ? insets.top : 0) + (compacto ? espacio.m : espacio.xl) }]}
-    >
-      <FigurasEncabezado variante={figuras} />
-      <View style={styles.fila}>
-        <View style={styles.textos}>
-          <Text style={[styles.titulo, { color: d.texto }, compacto && { fontSize: 24 }]}>{titulo}</Text>
-          {subtitulo ? <Text style={[styles.subtitulo, { color: d.texto }]}>{subtitulo}</Text> : null}
-        </View>
-        {emoji ? (
-          <Flotante distancia={6}>
-            <View style={styles.sticker}>
-              <Text style={styles.stickerEmoji}>{emoji}</Text>
-            </View>
-          </Flotante>
-        ) : null}
-      </View>
+    <View style={[styles.hero, { backgroundColor: fondo, paddingTop: (conSafeArea ? insets.top : 0) + (compacto ? espacio.m : espacio.xl) }]}>
+      <Text style={[styles.titulo, { color: texto }, compacto && { fontSize: 24, lineHeight: 30 }]}>{titulo}</Text>
+      {subtitulo ? <Text style={[styles.subtitulo, { color: texto }]}>{subtitulo}</Text> : null}
       {children ? <View style={styles.extra}>{children}</View> : null}
-    </LinearGradient>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
+const styles = estilosDinamicos(() => ({
   hero: {
     paddingHorizontal: espacio.l,
     paddingBottom: espacio.xl,
-    borderBottomLeftRadius: 34,
-    borderBottomRightRadius: 34,
-    overflow: 'hidden',
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
   },
-  fila: { flexDirection: 'row', alignItems: 'center' },
-  textos: { flex: 1, paddingRight: espacio.m },
   titulo: { fontFamily: fuentes.titulo, fontSize: 30, lineHeight: 36 },
-  subtitulo: { fontFamily: fuentes.textoMedio, fontSize: 15, opacity: 0.95, marginTop: 4 },
-  sticker: {
-    width: 64,
-    height: 64,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transform: [{ rotate: '8deg' }],
-  },
-  stickerEmoji: { fontSize: 34 },
+  subtitulo: { fontFamily: fuentes.textoMedio, fontSize: 15, marginTop: 4, opacity: 0.92 },
   extra: { marginTop: espacio.l },
-});
+}));

@@ -7,7 +7,7 @@ import { Aparecer, Boton, Cargando, EstadoBadge, MensajeError, Tarjeta, Vacio } 
 import { useCarga } from '../../hooks/useCarga';
 import { cancelarInscripcion, descargarCertificado, misInscripciones } from '../../api/inscripciones';
 import { mensajeDeError } from '../../api/client';
-import { colores, espacio, estilosEstado, fuentes } from '../../constants/tema';
+import { colores, espacio, estilosDinamicos, estilosEstado, fuentes } from '../../constants/tema';
 import { diaMes, rangoFechas } from '../../utils/formato';
 
 export default function MisInscripcionesScreen({ navigation }) {
@@ -76,7 +76,7 @@ export default function MisInscripcionesScreen({ navigation }) {
           <Hero
             titulo="Mis inscripciones"
             subtitulo={lista.length ? `Estás en ${lista.length} ${lista.length === 1 ? 'actividad' : 'actividades'} · ${aceptadas} confirmadas` : 'Acá vas a ver tus actividades'}
-            emoji="📋"
+           
             tema="menta"
             figuras={1}
           />
@@ -106,17 +106,17 @@ export default function MisInscripcionesScreen({ navigation }) {
                 </View>
               </View>
 
-              {ins.estado === 'pendiente' ? <Text style={styles.nota}>⏳ Esperando que el coordinador confirme tu lugar.</Text> : null}
+              {ins.estado === 'pendiente' ? <Text style={styles.nota}>Esperando que el coordinador confirme tu lugar.</Text> : null}
 
               {ins.estado === 'aceptada' ? (
                 <View style={styles.acciones}>
                   <Boton
                     titulo="Marcar asistencia"
-                    icono="📷"
+                   
                     variante="exito"
                     onPress={() => navigation.navigate('EscanearQR', { actividadId: ins.actividadId, titulo: ins.actividad.titulo })}
                   />
-                  <Boton titulo="Mi certificado" icono="🏅" variante="sol" onPress={() => certificado(ins)} cargando={ocupado === ins.id} />
+                  <Boton titulo="Mi certificado" variante="sol" onPress={() => certificado(ins)} cargando={ocupado === ins.id} />
                 </View>
               ) : null}
               {['pendiente', 'aceptada'].includes(ins.estado) ? (
@@ -130,7 +130,7 @@ export default function MisInscripcionesScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = estilosDinamicos(() => ({
   contenedor: { flex: 1, backgroundColor: colores.crema },
   lista: { paddingBottom: espacio.xl, flexGrow: 1 },
   relleno: { paddingHorizontal: espacio.l },
@@ -143,4 +143,4 @@ const styles = StyleSheet.create({
   linea: { fontFamily: fuentes.texto, color: colores.tintaSuave, fontSize: 13, marginTop: 2 },
   nota: { fontFamily: fuentes.textoMedio, color: colores.tintaSuave, marginBottom: espacio.s },
   acciones: { marginBottom: 2 },
-});
+}));

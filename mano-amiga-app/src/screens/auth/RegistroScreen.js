@@ -5,7 +5,7 @@ import Hero from '../../components/Hero';
 import { Boton, Campo, MensajeError, Tarjeta, TextoSuave } from '../../components/ui';
 import { useAuth } from '../../hooks/useAuth';
 import { mensajeDeError } from '../../api/client';
-import { colores, fuentes } from '../../constants/tema';
+import { colores, estilosDinamicos, fuentes } from '../../constants/tema';
 
 // El registro crea SIEMPRE un voluntario (el rol lo decide la API, no la app).
 export default function RegistroScreen({ navigation }) {
@@ -34,7 +34,7 @@ export default function RegistroScreen({ navigation }) {
   return (
     <Pantalla
       cabecera={
-        <Hero titulo="¡Sumate a la red!" subtitulo="En un minuto ya podés anotarte a tu primera actividad" emoji="🙌" tema="lila" figuras={1}>
+        <Hero titulo="¡Sumate a la red!" subtitulo="En un minuto ya podés anotarte a tu primera actividad" tema="lila" figuras={1}>
           <Pressable onPress={() => navigation.goBack()} hitSlop={10}>
             <Text style={styles.volver}>← Ya tengo cuenta</Text>
           </Pressable>
@@ -43,19 +43,19 @@ export default function RegistroScreen({ navigation }) {
     >
       <MensajeError texto={error} />
       <Tarjeta>
-        <Campo etiqueta="Nombre *" icono="🙂" value={form.nombre} onChangeText={set('nombre')} autoComplete="given-name" />
-        <Campo etiqueta="Apellido *" icono="👤" value={form.apellido} onChangeText={set('apellido')} autoComplete="family-name" />
-        <Campo etiqueta="Email *" icono="✉️" value={form.email} onChangeText={set('email')} autoCapitalize="none" keyboardType="email-address" autoComplete="email" />
-        <Campo etiqueta="Teléfono" icono="📱" value={form.telefono} onChangeText={set('telefono')} keyboardType="phone-pad" autoComplete="tel" />
-        <Campo etiqueta="Contraseña * (mínimo 8 caracteres)" icono="🔒" value={form.password} onChangeText={set('password')} secureTextEntry autoComplete="new-password" />
-        <Campo etiqueta="Repetir contraseña *" icono="🔁" value={form.repetir} onChangeText={set('repetir')} secureTextEntry />
-        <TextoSuave estilo={{ marginBottom: 8 }}>🔐 Tu teléfono y apellido solo los ven los coordinadores de las actividades en las que te inscribas.</TextoSuave>
-        <Boton titulo="Crear mi cuenta" icono="🎉" onPress={enviar} cargando={enviando} />
+        <Campo etiqueta="Nombre *" value={form.nombre} onChangeText={set('nombre')} autoComplete="given-name" />
+        <Campo etiqueta="Apellido *" value={form.apellido} onChangeText={set('apellido')} autoComplete="family-name" />
+        <Campo etiqueta="Email *" value={form.email} onChangeText={set('email')} autoCapitalize="none" keyboardType="email-address" autoComplete="email" />
+        <Campo etiqueta="Teléfono" value={form.telefono} onChangeText={set('telefono')} keyboardType="phone-pad" autoComplete="tel" />
+        <Campo etiqueta="Contraseña * (mínimo 8 caracteres)" value={form.password} onChangeText={set('password')} secureTextEntry autoComplete="new-password" />
+        <Campo etiqueta="Repetir contraseña *" value={form.repetir} onChangeText={set('repetir')} secureTextEntry />
+        <TextoSuave estilo={{ marginBottom: 8 }}>Tu teléfono y apellido solo los ven los coordinadores de las actividades en las que te inscribas.</TextoSuave>
+        <Boton titulo="Crear mi cuenta" onPress={enviar} cargando={enviando} />
       </Tarjeta>
     </Pantalla>
   );
 }
 
-const styles = StyleSheet.create({
+const styles = estilosDinamicos(() => ({
   volver: { fontFamily: fuentes.negrita, color: colores.blanco, fontSize: 15 },
-});
+}));
