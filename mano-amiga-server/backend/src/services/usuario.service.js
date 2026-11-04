@@ -1,5 +1,6 @@
 const ApiError = require('../utils/ApiError');
-const { Usuario } = require('../models');
+const { paginar } = require('../utils/paginacion');
+const { Usuario, Auditoria } = require('../models');
 const dto = require('./dto');
 const { esPushTokenValido } = require('./notificacion.service');
 
@@ -17,4 +18,38 @@ async function registrarPushToken(usuario, token) {
   await Usuario.updateOne({ _id: usuario.id }, { $push: { pushTokens: { $each: [token], $slice: -5 } } });
 }
 
-module.exports = { obtenerPerfil, registrarPushToken };
+/* R8 : Editar datos de contacto y preferencias. Lista blanca explícita: el email, el rol, la organización
+ y la condición judicial NO se pueden cambiar desde acá (el validator ya los descarta; esto es la 2.ª barrera).
+ */
+async function actualizarPerfil(usuario, datos) {
+  const cambios = {};
+  for (const campo of ['nombre', 'apellido', 'telefono']) {
+    if (datos[campo] !== undefined) cambios[campo] = datos[campo];
+  }
+  if (datos.preferencias && datos.preferencias.tema) cambios['preferencias.tema'] = datos.preferencias.tema;
+  const u = await Usuario.findByIdAndUpdate(usuario.id, { $set: cambios }, { returnDocument: 'after', runValidators: true }).lean();
+  if (!u) throw ApiError.notFound();
+  return dto.usuarioPropio(u);
+}
+
+// Eventos que se muestran en "Historial de accesos". Solo los de la propia cuenta (id del token).
+const ACCIONES_DE_ACCESO = ['login', 'logout', 'password_cambio', 'refresh_reusado'];
+
+async function misAccesos(usuario, q) {
+  const filtro = { usuarioId: usuario.id, accion: { $in: ACCIONES_DE_ACCESO } };
+  const res = await paginar(Auditoria.find(filtro).sort({ fecha: -1 }).lean(), Auditoria.countDocuments(filtro), q);
+  return {
+    ...res,
+    data: res.data.map((a) => ({
+      id: String(a._id),
+      accion: a.accion,
+      resultado: a.resultado,
+      fecha: a.fecha,
+      ip: a.ip || '',
+      // En los logins exitosos el "detalle" es el dispositivo (user-agent recortado).
+      dispositivo: a.accion === 'login' && a.resultado === 'ok' ? a.detalle || '' : '',
+    })),
+  };
+}
+
+module.exports = { obtenerPerfil, registrarPushToken, actualizarPerfil, misAccesos };

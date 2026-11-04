@@ -1,8 +1,11 @@
 const ApiError = require('../utils/ApiError');
 const auditoria = require('../utils/auditoria');
 const { paginar } = require('../utils/paginacion');
-const { Actividad, Etiqueta } = require('../models');
+const config = require('../config/env');
+const logger = require('../utils/logger');
+const { Actividad, Etiqueta, Usuario } = require('../models');
 const permisos = require('./permisos');
+const notificaciones = require('./notificacion.service');
 const dto = require('./dto');
 
 const RADIO_TIERRA_KM = 6378.1;
@@ -19,9 +22,8 @@ async function validarEtiquetas(ids) {
   if (existentes !== ids.length) throw ApiError.badRequest('ETIQUETA_INEXISTENTE', 'Alguna etiqueta no existe');
 }
 
-/**
- * Listado con filtro ABAC DENTRO de la consulta (5.3): las actividades sensibles nunca salen del servidor
- * para un voluntario judicial.
+/* Listado con filtro ABAC DENTRO de la consulta (5.3): las actividades sensibles nunca salen del servidor
+ para un voluntario judicial.
  */
 async function listar(usuario, q) {
   const condiciones = [];
@@ -82,7 +84,27 @@ async function crear(usuario, datos, ctx) {
     creadaPor: usuario.id,
   });
   await auditoria.registrar({ usuarioId: usuario.id, accion: 'actividad_crear', recurso: 'actividad', recursoId: act._id, resultado: 'ok', ip: ctx.ip });
+  avisarNuevaActividad(act); // sin await: el push no debe demorar la respuesta
   return obtener(usuario, act._id, ctx);
+}
+
+/**
+ * R9 · Aviso de nueva actividad a los voluntarios con notificaciones activadas.
+ * ABAC también acá: si la actividad es sensible, a un voluntario judicial NO se le avisa.
+ */
+async function avisarNuevaActividad(act) {
+  if (config.esTest) return; // en los tests no hay push (y así no quedan consultas sueltas)
+  try {
+    const filtro = { rol: 'voluntario', activo: true, 'pushTokens.0': { $exists: true } };
+    const sensibles = (await permisos.idsEtiquetasSensibles()).map(String);
+    if ((act.etiquetas || []).some((e) => sensibles.includes(String(e)))) filtro.esJudicial = false;
+    const destinatarios = await Usuario.find(filtro).distinct('_id');
+    if (destinatarios.length) {
+      await notificaciones.notificar(destinatarios, 'Nueva actividad', `Se publicó "${act.titulo}". ¡Sumate!`, { actividadId: String(act._id) });
+    }
+  } catch (err) {
+    logger.warn('No se pudo avisar la nueva actividad', err.message);
+  }
 }
 
 async function actualizar(usuario, id, datos, ctx) {

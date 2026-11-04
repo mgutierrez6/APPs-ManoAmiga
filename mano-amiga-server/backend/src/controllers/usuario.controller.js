@@ -1,6 +1,8 @@
 const usuarioService = require('../services/usuario.service');
 const inscripcionService = require('../services/inscripcion.service');
 const asistenciaService = require('../services/asistencia.service');
+const authService = require('../services/auth.service');
+const ctx = require('./ctx');
 
 async function me(req, res) {
   res.json(await usuarioService.obtenerPerfil(req.user));
@@ -19,4 +21,16 @@ async function misHoras(req, res) {
   res.json(await asistenciaService.misHoras(req.user));
 }
 
-module.exports = { me, pushToken, misInscripciones, misHoras };
+async function actualizarMe(req, res) {
+  res.json(await usuarioService.actualizarPerfil(req.user, req.valid.body));
+}
+
+async function cambiarPassword(req, res) {
+  res.json(await authService.cambiarPassword(req.user, req.valid.body, ctx(req)));
+}
+
+async function misAccesos(req, res) {
+  res.json(await usuarioService.misAccesos(req.user, req.valid.query));
+}
+
+module.exports = { me, pushToken, misInscripciones, misHoras, actualizarMe, cambiarPassword, misAccesos };
