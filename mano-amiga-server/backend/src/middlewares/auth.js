@@ -4,12 +4,18 @@ const ApiError = require('../utils/ApiError');
 const { Usuario, Organizacion } = require('../models');
 const { esPublico } = require('../security/matriz');
 
-/**
- * Verifica el JWT y RELEE al usuario en la base en cada pedido (RS5, A4).
- * El token solo lleva el id (sub): el rol, la organización, el estado y el atributo judicial
- * se toman SIEMPRE de la base, así un cambio de permisos tiene efecto en el siguiente pedido.
+/*
+Verifica el JWT y RELEE al usuario en la base en cada pedido (RS5, A4).
+El token solo lleva el id (sub): el rol, la organización, el estado y el atributo judicial
+se toman SIEMPRE de la base, así un cambio de permisos tiene efecto en el siguiente pedido.
  */
 async function auth(req, res, next) {
+  req.user = await usuarioDelToken(req);
+  next();
+}
+
+/** Lee el Bearer token, lo verifica y devuelve el usuario releído de la base (o lanza 401). */
+async function usuarioDelToken(req) {
   const header = req.get('authorization') || '';
   const [esquema, token] = header.split(' ');
   if (esquema !== 'Bearer' || !token) throw ApiError.unauthorized();
@@ -35,19 +41,29 @@ async function auth(req, res, next) {
     if (!org || !org.activa) throw ApiError.unauthorized('ORGANIZACION_INACTIVA', 'Tu organización no está activa');
   }
 
-  req.user = {
+  return {
     id: String(usuario._id),
     rol: usuario.rol,
     organizacionId: usuario.organizacionId ? String(usuario.organizacionId) : null,
     esJudicial: Boolean(usuario.esJudicial),
     nombre: usuario.nombre,
   };
+}
+
+/*  Para endpoints PÚBLICOS que igual adaptan la respuesta si hay sesión (ej.: el mapa aplica ABAC
+  a un voluntario judicial). Un token inválido o ausente NO corta el pedido: se atiende como anónimo.
+ */
+async function authOpcional(req, res, next) {
+  try {
+    req.user = req.get('authorization') ? await usuarioDelToken(req) : null;
+  } catch {
+    req.user = null;
+  }
   next();
 }
 
-/**
- * RS8 · Denegar por defecto: TODO endpoint exige autenticación salvo los que la matriz (RS10)
- * declara públicos. Si alguien agrega una ruta nueva y se olvida del auth, igual queda protegida.
+/* RS8 : Denegar por defecto: TODO endpoint exige autenticación salvo los que la matriz (RS10)
+ declara públicos. Si alguien agrega una ruta nueva y se olvida del auth, igual queda protegida.
  */
 async function requerirAuthSalvoListaBlanca(req, res, next) {
   // req.baseUrl = "/api/v1" (donde está montado) + req.path = "/auth/login" -> ruta completa, como en la matriz.
@@ -55,4 +71,4 @@ async function requerirAuthSalvoListaBlanca(req, res, next) {
   return auth(req, res, next);
 }
 
-module.exports = { auth, requerirAuthSalvoListaBlanca };
+module.exports = { auth, authOpcional, requerirAuthSalvoListaBlanca };

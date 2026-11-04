@@ -9,17 +9,15 @@ import { colores, espacio, estilosDinamicos, fuentes, sombra } from '../../const
 import { FichaPunto, FiltrosMapa, REGION_INICIAL, colorPunto, usePuntos } from './comun';
 import Icono from '../../components/Icono';
 
-/**
- * Mapa de actividades y puntos de acopio (R5).
- *
- * Privacidad (RS7): la ubicación de la persona se usa SOLO dentro del celular para centrar el mapa.
- * Nunca se manda al servidor; la app pide los puntos institucionales y el mapa los dibuja.
- */
+/*
+Mapa de actividades y puntos de acopio (R5).
+Privacidad (RS7): ...
+*/
 export default function MapaScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { modo } = useTema();
   const mapa = useRef(null);
-  const { puntos, tipo, setTipo, error, recargar } = usePuntos();
+  const { puntos, filtros, error, recargar } = usePuntos();
   const [seleccionado, setSeleccionado] = useState(null);
   const [miUbicacion, setMiUbicacion] = useState(false);
   const [avisoUbicacion, setAvisoUbicacion] = useState(null);
@@ -70,7 +68,7 @@ export default function MapaScreen({ navigation }) {
 
       <View style={[styles.arriba, { paddingTop: insets.top + espacio.s }]} pointerEvents="box-none">
         <Text style={styles.titulo}>Cerca tuyo</Text>
-        <FiltrosMapa tipo={tipo} setTipo={setTipo} total={puntos.length} />
+        <FiltrosMapa {...filtros} total={puntos.length} />
         <View style={styles.avisos}>
           <MensajeError texto={error} onReintentar={recargar} />
           {avisoUbicacion ? <Text style={styles.aviso}>{avisoUbicacion}</Text> : null}

@@ -4,12 +4,9 @@ import { Aparecer, Cargando, MensajeError, TextoSuave, Vacio } from '../../compo
 import { colores, espacio, estilosDinamicos } from '../../constants/tema';
 import { FichaPunto, FiltrosMapa, usePuntos } from './comun';
 
-/**
- * Versión web del mapa (react-native-maps no funciona en navegador): muestra los mismos puntos como
- * lista, con el botón "Cómo llegar" que abre el mapa del navegador. En el celular se ve el mapa real.
- */
+/* Versión web del mapa (react-native-maps no funciona en navegador): muestra los mismos puntos como lista, con el botón "Cómo llegar" que abre el mapa del navegador. En el celular se ve el mapa real. */
 export default function MapaScreen({ navigation }) {
-  const { puntos, tipo, setTipo, cargando, error, recargar } = usePuntos();
+  const { puntos, filtros, cargando, error, recargar } = usePuntos();
   return (
     <FlatList
       style={styles.contenedor}
@@ -20,7 +17,7 @@ export default function MapaScreen({ navigation }) {
         <>
           <Hero titulo="Mapa" subtitulo="Actividades y puntos de acopio" tema="menta" figuras={1} />
           <View style={{ marginTop: espacio.m }}>
-            <FiltrosMapa tipo={tipo} setTipo={setTipo} total={puntos.length} />
+            <FiltrosMapa {...filtros} total={puntos.length} />
           </View>
           <View style={styles.relleno}>
             <TextoSuave estilo={{ marginVertical: espacio.s }}>En la app del celular estos puntos se ven sobre el mapa.</TextoSuave>
