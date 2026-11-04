@@ -22,7 +22,9 @@ async function conectar() {
     uri = memoria.getUri();
   }
   const base = `test_${crypto.randomBytes(4).toString('hex')}`;
-  await mongoose.connect(uri, { dbName: base });
+  // runtimeAdapters: el driver 7 carga "os" con import() dinámico, que Jest (CommonJS) no soporta;
+  // sin esto el handshake sale sin metadatos y Mongo rechaza la conexión.
+  await mongoose.connect(uri, { dbName: base, runtimeAdapters: { os: require('os') } });
   for (const m of Object.values(models)) {
     try {
       await m.syncIndexes();
