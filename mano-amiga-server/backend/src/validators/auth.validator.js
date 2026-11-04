@@ -30,4 +30,8 @@ const logout = {
   body: Joi.object({ refreshToken: Joi.string().hex().length(128) }),
 };
 
-module.exports = { register, login, refresh, logout };
+const reauth = {
+  body: Joi.object({ password: Joi.string().max(200).required() }),
+};
+
+module.exports = { register, login, refresh, logout, reauth, password };

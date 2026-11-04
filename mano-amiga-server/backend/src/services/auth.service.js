@@ -99,9 +99,46 @@ async function logout(usuario, ctx) {
   await auditoria.registrar({ usuarioId: usuario.id, accion: 'logout', resultado: 'ok', ip: ctx.ip });
 }
 
-/** RS5: se usa desde el panel de admin (Sprint 2) al dar de baja un coordinador u organización. */
+/** RS5: se usa desde el panel de admin al dar de baja un coordinador u organización. */
 async function revocarSesiones(usuarioIds) {
   await Sesion.deleteMany({ userId: { $in: [].concat(usuarioIds) } });
 }
 
-module.exports = { registrar, login, refresh, logout, revocarSesiones };
+/* RS9: El admin vuelve a poner su contraseña y recibe un token de reauth de 5 minutos.
+ Los fallos quedan auditados (muchos seguidos = posible credencial robada).
+ */
+async function reauth(usuario, password, ctx) {
+  const u = await Usuario.findById(usuario.id).select('+passwordHash');
+  const ok = u ? await bcrypt.compare(password, u.passwordHash) : false;
+  if (!ok) {
+    await auditoria.registrar({ usuarioId: usuario.id, accion: 'reauth', resultado: 'fallo', ip: ctx.ip });
+    throw credencialesInvalidas();
+  }
+  await auditoria.registrar({ usuarioId: usuario.id, accion: 'reauth', resultado: 'ok', ip: ctx.ip });
+  return tokens.firmarReauthToken(usuario.id);
+}
+
+/* R8: Cambio de contraseña. Pide la actual, cierra TODAS las sesiones (RS5: si alguien más tenía
+ la cuenta abierta, queda afuera) y devuelve una sesión nueva solo para este dispositivo.
+ La contraseña actual incorrecta es 400 (no 401), así la app no la confunde con una sesión vencida.
+ */
+async function cambiarPassword(usuario, { actual, nueva }, ctx) {
+  const u = await Usuario.findById(usuario.id).select('+passwordHash');
+  if (!u) throw ApiError.unauthorized();
+  if (!(await bcrypt.compare(actual, u.passwordHash))) {
+    await auditoria.registrar({ usuarioId: usuario.id, accion: 'password_cambio', resultado: 'fallo', ip: ctx.ip });
+    throw ApiError.badRequest('PASSWORD_ACTUAL_INCORRECTA', 'La contraseña actual no es correcta');
+  }
+  if (await bcrypt.compare(nueva, u.passwordHash)) {
+    throw ApiError.badRequest('PASSWORD_REPETIDA', 'La nueva contraseña tiene que ser distinta a la actual');
+  }
+  u.passwordHash = await bcrypt.hash(nueva, config.bcryptCosto);
+  await u.save();
+
+  await revocarSesiones(u._id);
+  const par = await crearSesion(u._id, ctx);
+  await auditoria.registrar({ usuarioId: usuario.id, accion: 'password_cambio', resultado: 'ok', ip: ctx.ip, detalle: 'Se cerraron las demás sesiones' });
+  return { ...par, usuario: dto.usuarioSesion(u) };
+}
+
+module.exports = { registrar, login, refresh, logout, revocarSesiones, reauth, cambiarPassword };

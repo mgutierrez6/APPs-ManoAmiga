@@ -22,4 +22,22 @@ const loginLimiter = rateLimit({
   },
 });
 
-module.exports = { loginLimiter };
+/* Pedidos que reciben la contraseña con la sesión ya iniciada (reauth del admin y cambio de contraseña):
+ 5 intentos fallidos cada 15 minutos POR USUARIO, para que un token robado no sirva para adivinarla.
+ Se considera fallido cualquier respuesta 4xx. 
+ */
+const passwordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  skipSuccessfulRequests: true,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  keyGenerator: (req) => `pwd|${req.user ? req.user.id : ipKeyGenerator(req.ip)}`,
+  handler: (req, res) => {
+    res.status(429).json({
+      error: { code: 'DEMASIADOS_INTENTOS', message: 'Demasiados intentos. Probá de nuevo en 15 minutos.' },
+    });
+  },
+});
+
+module.exports = { loginLimiter, passwordLimiter };

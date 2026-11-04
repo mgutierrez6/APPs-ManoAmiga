@@ -21,4 +21,8 @@ async function logout(req, res) {
   res.status(204).end();
 }
 
-module.exports = { register, login, refresh, logout };
+async function reauth(req, res) {
+  res.status(200).json(await authService.reauth(req.user, req.valid.body.password, ctx(req)));
+}
+
+module.exports = { register, login, refresh, logout, reauth };

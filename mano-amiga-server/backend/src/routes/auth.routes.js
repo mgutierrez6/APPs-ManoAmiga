@@ -1,7 +1,7 @@
 const { Router } = require('express');
 const authorize = require('../middlewares/authorize');
 const validate = require('../middlewares/validate');
-const { loginLimiter } = require('../middlewares/rateLimit');
+const { loginLimiter, passwordLimiter } = require('../middlewares/rateLimit');
 const v = require('../validators/auth.validator');
 const c = require('../controllers/auth.controller');
 const { TODOS } = require('../security/matriz');
@@ -14,5 +14,6 @@ router.post('/register', validate(v.register), c.register); // pública
 router.post('/login', loginLimiter, validate(v.login), c.login); // pública + rate limit
 router.post('/refresh', validate(v.refresh), c.refresh); // pública (la credencial es el refresh token)
 router.post('/logout', authorize(...TODOS), validate(v.logout), c.logout);
+router.post('/reauth', authorize('admin'), passwordLimiter, validate(v.reauth), c.reauth); // RS9
 
 module.exports = router;
