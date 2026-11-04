@@ -11,6 +11,14 @@ const dto = require('./dto');
 const MARGEN_MS = 2 * 60 * 60 * 1000;
 const redondear = (n) => Math.round(n * 100) / 100;
 
+/* RS-20: No se acreditan horas de una actividad cancelada ni de una que todavía no empezó
+ (las horas judiciales tienen que corresponder a trabajo que realmente ocurrió).
+ */
+function assertSePuedenAcreditarHoras(act) {
+  if (!act || act.estado === 'cancelada') throw ApiError.conflict('ACTIVIDAD_CANCELADA', 'La actividad fue cancelada: no se pueden acreditar horas');
+  if (Date.now() < new Date(act.fechaInicio).getTime()) throw ApiError.conflict('ACTIVIDAD_NO_EMPEZO', 'La actividad todavía no empezó: no se pueden acreditar horas');
+}
+
 async function actividadDeMiOrg(usuario, actividadId, ctx) {
   const act = await Actividad.findById(actividadId).lean();
   if (!act) throw ApiError.notFound('ACTIVIDAD_NO_ENCONTRADA', 'La actividad no existe');
@@ -40,6 +48,8 @@ async function registrarConQR(usuario, actividadId, codigo, ctx) {
   const act = await Actividad.findById(actividadId).lean();
   if (!act || act.estado !== 'publicada') throw ApiError.notFound('ACTIVIDAD_NO_ENCONTRADA', 'La actividad no existe');
   assertEnHorario(act);
+  // RS-19: la regla ABAC se vuelve a controlar acá (la persona pudo pasar a ser judicial después de inscribirse).
+  await permisos.assertABAC(usuario, act, ctx);
 
   const ins = await Inscripcion.findOne({ actividadId, voluntarioId: usuario.id }).lean();
   if (!ins || ins.estado !== 'aceptada') throw ApiError.forbidden('INSCRIPCION_NO_ACEPTADA', 'Solo pueden registrar asistencia las personas aceptadas');
@@ -69,6 +79,16 @@ async function registrarManual(usuario, inscripcionId, horasPedidas, ctx) {
   if (ins.estado !== 'aceptada') throw ApiError.conflict('INSCRIPCION_NO_ACEPTADA', 'La inscripción no está aceptada');
 
   const act = await Actividad.findById(ins.actividadId).lean();
+  if (!act) throw ApiError.notFound('ACTIVIDAD_NO_ENCONTRADA', 'La actividad no existe');
+  assertSePuedenAcreditarHoras(act);
+
+  // RS-19: ABAC sobre el VOLUNTARIO (no sobre el coordinador que hace el registro).
+  const voluntario = await Usuario.findById(ins.voluntarioId).select('esJudicial').lean();
+  if (!(await permisos.puedeVerActividad({ esJudicial: Boolean(voluntario && voluntario.esJudicial) }, act))) {
+    auditoria.registrar({ usuarioId: usuario.id, accion: 'acceso_denegado_abac', recurso: 'asistencia-manual', recursoId: ins._id, resultado: 'denegado', ip: ctx.ip });
+    throw ApiError.forbidden('ACTIVIDAD_RESTRINGIDA', 'Esta persona no puede participar de esta actividad');
+  }
+
   const duracion = (new Date(act.fechaFin) - new Date(act.fechaInicio)) / 3600000;
   const horas = redondear(horasPedidas !== undefined ? horasPedidas : duracion);
   if (horas > duracion) throw ApiError.badRequest('HORAS_INVALIDAS', `No puede superar la duración de la actividad (${redondear(duracion)} h)`);
@@ -110,6 +130,7 @@ async function validar(usuario, asistenciaId, ctx) {
   if (asis.estado !== 'abierta') throw ApiError.conflict('ASISTENCIA_YA_VALIDADA', 'La asistencia ya fue validada');
 
   const act = await Actividad.findById(asis.actividadId).lean();
+  assertSePuedenAcreditarHoras(act);
   const inicio = Math.max(asis.checkIn.getTime(), new Date(act.fechaInicio).getTime());
   const salida = new Date(Math.min(Date.now(), new Date(act.fechaFin).getTime()));
   const horas = redondear(Math.max(0, (salida.getTime() - inicio) / 3600000));

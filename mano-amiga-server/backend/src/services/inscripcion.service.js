@@ -44,15 +44,20 @@ async function inscribir(usuario, actividadId, ctx) {
   let inscripcion;
   try {
     if (previa) {
-      // Había cancelado antes: se reactiva la misma inscripción.
-      previa.estado = 'pendiente';
-      previa.fecha = new Date();
-      inscripcion = await previa.save();
+      // Había cancelado antes: se reactiva la misma inscripción. Es atómico (solo si SIGUE cancelada):
+      // con dos pedidos simultáneos, uno solo la reactiva y el otro devuelve su cupo (RS-18).
+      inscripcion = await Inscripcion.findOneAndUpdate(
+        { _id: previa._id, estado: 'cancelada' },
+        { $set: { estado: 'pendiente', fecha: new Date() } },
+        { returnDocument: 'after' }
+      );
+      if (!inscripcion) throw ApiError.conflict('YA_INSCRIPTO', 'Ya estás inscripto en esta actividad');
     } else {
       inscripcion = await Inscripcion.create({ actividadId, voluntarioId: usuario.id, organizacionId: act.organizacionId });
     }
   } catch (err) {
     await liberarCupo(actividadId); // si falla (por ejemplo, doble pedido simultáneo) devolvemos el cupo
+    if (err instanceof ApiError) throw err;
     if (err.code === 11000) throw ApiError.conflict('YA_INSCRIPTO', 'Ya estás inscripto en esta actividad');
     throw err;
   }
@@ -83,8 +88,14 @@ async function cancelar(usuario, id, ctx) {
   if (!['pendiente', 'aceptada'].includes(ins.estado)) throw ApiError.conflict('NO_CANCELABLE', 'La inscripción no se puede cancelar');
   if (await Asistencia.exists({ inscripcionId: ins._id })) throw ApiError.conflict('ASISTENCIA_REGISTRADA', 'Ya tenés una asistencia registrada en esta actividad');
 
-  ins.estado = 'cancelada';
-  await ins.save();
+  // RS-18: el cambio de estado es atómico y el cupo se libera SOLO si este pedido fue el que cambió
+  // el estado. Si llegan dos "cancelar" a la vez, el segundo no encuentra nada que cancelar.
+  const cancelada = await Inscripcion.findOneAndUpdate(
+    { _id: ins._id, estado: { $in: ['pendiente', 'aceptada'] } },
+    { $set: { estado: 'cancelada' } },
+    { returnDocument: 'after' }
+  );
+  if (!cancelada) throw ApiError.conflict('NO_CANCELABLE', 'La inscripción no se puede cancelar');
   await liberarCupo(ins.actividadId);
   await auditoria.registrar({ usuarioId: usuario.id, accion: 'inscripcion_cancelar', recurso: 'inscripcion', recursoId: ins._id, resultado: 'ok', ip: ctx.ip });
 }
@@ -104,9 +115,8 @@ async function listarPorActividad(usuario, actividadId, q, ctx) {
   return lista.map(dto.inscripcionParaCoordinador);
 }
 
-/**
- * PATCH /inscripciones/:id — aceptar o rechazar (R4). Coordinador de la org (RS3).
- * Transiciones válidas: pendiente -> aceptada | rechazada ; aceptada -> rechazada (si no tiene asistencia).
+/* PATCH /inscripciones/:id — aceptar o rechazar (R4). Coordinador de la org (RS3).
+ Transiciones válidas: pendiente -> aceptada | rechazada ; aceptada -> rechazada (si no tiene asistencia).
  */
 async function cambiarEstado(usuario, id, nuevoEstado, ctx) {
   const ins = await Inscripcion.findById(id);
@@ -133,9 +143,8 @@ async function cambiarEstado(usuario, id, nuevoEstado, ctx) {
   return { id: String(actualizada._id), actividadId: String(actualizada.actividadId), estado: actualizada.estado };
 }
 
-/**
- * Datos para el certificado. Acceso: titular (RS2) o coordinador de la org (RS3).
- * Requiere al menos una asistencia validada.
+/*Datos para el certificado. Acceso: titular (RS2) o coordinador de la org (RS3).
+ Requiere al menos una asistencia validada.
  */
 async function datosCertificado(usuario, id, ctx) {
   const ins = await Inscripcion.findById(id)
