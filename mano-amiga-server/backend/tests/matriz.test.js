@@ -1,5 +1,4 @@
-/**
- * RS1, RS4, RS8, RS10 · La matriz endpoint × rol se verifica automáticamente.
+/* RS1, RS4, RS8, RS10 · La matriz endpoint × rol se verifica automáticamente.
  */
 const { listarRutas } = require('../src/routes');
 const { app, request, conectar, desconectar, crearUsuario, crearOrganizacion } = require('./helpers');
@@ -7,7 +6,6 @@ const { matriz, TODOS } = require('../src/security/matriz');
 
 const ID_FALSO = '64b7f0c2a1b2c3d4e5f60718';
 const aUrl = (ruta) => ruta.replace(/:[a-zA-Z]+/g, ID_FALSO);
-const sprint1 = matriz.filter((e) => e.sprint === 1);
 
 let tokens = {};
 
@@ -24,21 +22,21 @@ afterAll(desconectar);
 
 describe('RS10 · la matriz documenta todas las rutas', () => {
   const registradas = listarRutas();
-  const documentadas = sprint1.map((e) => `${e.metodo} ${e.ruta}`);
+  const documentadas = matriz.map((e) => `${e.metodo} ${e.ruta}`);
 
   test('toda ruta registrada en Express figura en la matriz', () => {
     const sinDocumentar = registradas.filter((r) => !documentadas.includes(r));
     expect(sinDocumentar).toEqual([]);
   });
 
-  test('todo endpoint de Sprint 1 de la matriz está implementado', () => {
+  test('todo endpoint de la matriz está implementado', () => {
     const faltan = documentadas.filter((d) => !registradas.includes(d));
     expect(faltan).toEqual([]);
   });
 });
 
 describe('RS8 · denegar por defecto: sin token -> 401 salvo la lista blanca', () => {
-  for (const e of sprint1.filter((x) => x.acceso === 'jwt')) {
+  for (const e of matriz.filter((x) => x.acceso === 'jwt')) {
     test(`${e.metodo} ${e.ruta} sin token responde 401`, async () => {
       const res = await request(app)[e.metodo.toLowerCase()](aUrl(e.ruta)).send({});
       expect(res.status).toBe(401);
@@ -46,7 +44,7 @@ describe('RS8 · denegar por defecto: sin token -> 401 salvo la lista blanca', (
   }
 
   test('los endpoints de la lista blanca responden sin token', async () => {
-    for (const ruta of ['/api/v1/health', '/api/v1/etiquetas', '/api/v1/campanas']) {
+    for (const ruta of ['/api/v1/health', '/api/v1/etiquetas', '/api/v1/campanas', '/api/v1/mapa/puntos']) {
       expect((await request(app).get(ruta)).status).toBe(200);
     }
     // login sin datos: 400 (validación), no 401 -> llegó al endpoint sin pedir token
@@ -72,7 +70,7 @@ describe('RS8 · denegar por defecto: sin token -> 401 salvo la lista blanca', (
 });
 
 describe('RS1 / RS4 · cada rol que no figura en la matriz recibe 403 (control en el servidor)', () => {
-  for (const e of sprint1.filter((x) => x.acceso === 'jwt')) {
+  for (const e of matriz.filter((x) => x.acceso === 'jwt')) {
     for (const rol of TODOS.filter((r) => !e.roles.includes(r))) {
       test(`${rol} -> ${e.metodo} ${e.ruta} = 403`, async () => {
         const res = await request(app)[e.metodo.toLowerCase()](aUrl(e.ruta)).set('Authorization', `Bearer ${tokens[rol]}`).send({});
