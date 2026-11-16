@@ -19,6 +19,9 @@ const MONTAJES = [
   ['/proyectos', comunidad.proyectos],
   ['/mapa', require('./mapa.routes')],
   ['/admin', require('./admin.routes')],
+  ['/organizaciones', require('./organizacion.routes')],
+  ['/historias', require('./historia.routes')],
+  ['/archivos', require('./archivo.routes')],
 ];
 for (const [prefijo, router] of MONTAJES) api.use(prefijo, router);
 

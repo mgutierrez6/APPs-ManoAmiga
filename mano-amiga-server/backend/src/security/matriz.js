@@ -42,7 +42,7 @@ const matriz = [
   { metodo: 'GET', ruta: '/api/v1/etiquetas', acceso: 'publico', roles: [], control: '', sprint: 1 },
   { metodo: 'GET', ruta: '/api/v1/actividades', acceso: 'jwt', roles: TODOS, control: 'ABAC en la consulta', sprint: 1 },
   { metodo: 'GET', ruta: '/api/v1/actividades/:id', acceso: 'jwt', roles: TODOS, control: 'ABAC (403)', sprint: 1 },
-  { metodo: 'POST', ruta: '/api/v1/actividades', acceso: 'jwt', roles: ['coordinador'], control: 'org del token', sprint: 1 },
+  { metodo: 'POST', ruta: '/api/v1/actividades', acceso: 'jwt', roles: ['coordinador'], control: 'org del token · pregunta obligatoria de contacto con menores (ABAC)', sprint: 1 },
   { metodo: 'PATCH', ruta: '/api/v1/actividades/:id', acceso: 'jwt', roles: ['coordinador'], control: 'Coordinador de la org (RS3)', sprint: 1 },
   { metodo: 'DELETE', ruta: '/api/v1/actividades/:id', acceso: 'jwt', roles: ['coordinador'], control: 'Coordinador de la org (RS3)', sprint: 1 },
 
@@ -68,6 +68,24 @@ const matriz = [
   { metodo: 'POST', ruta: '/api/v1/campanas', acceso: 'jwt', roles: ['coordinador'], control: 'org del token', sprint: 1 },
   { metodo: 'GET', ruta: '/api/v1/proyectos/:id/publicaciones', acceso: 'publico', roles: [], control: '', sprint: 1 },
   { metodo: 'POST', ruta: '/api/v1/proyectos/:id/publicaciones', acceso: 'jwt', roles: ['coordinador'], control: 'Coordinador de la org (RS3)', sprint: 1 },
+
+  // --- Perfil de organización (Sprint 4) ---
+  { metodo: 'GET', ruta: '/api/v1/organizaciones/:id', acceso: 'jwt', roles: TODOS, control: 'Solo organizaciones activas · coordinadores sin contacto · ABAC en los contadores', sprint: 4 },
+  { metodo: 'GET', ruta: '/api/v1/organizaciones/:id/publicaciones', acceso: 'jwt', roles: TODOS, control: 'ABAC: sin publicaciones de actividades sensibles para judiciales', sprint: 4 },
+  { metodo: 'GET', ruta: '/api/v1/organizaciones/:id/proximas', acceso: 'jwt', roles: TODOS, control: 'ABAC en la consulta', sprint: 4 },
+  { metodo: 'PATCH', ruta: '/api/v1/organizaciones/mia', acceso: 'jwt', roles: ['coordinador'], control: 'org del token (RS3) · lista blanca de campos · fotos propias', sprint: 4 },
+  { metodo: 'GET', ruta: '/api/v1/organizaciones/mia/realizadas', acceso: 'jwt', roles: ['coordinador'], control: 'org del token (RS3)', sprint: 4 },
+  { metodo: 'POST', ruta: '/api/v1/organizaciones/mia/publicaciones', acceso: 'jwt', roles: ['coordinador'], control: 'Actividad de su org (RS3) ya realizada · fotos propias', sprint: 4 },
+
+  // --- Mi historia (Sprint 4) ---
+  { metodo: 'GET', ruta: '/api/v1/historias', acceso: 'jwt', roles: ['voluntario'], control: 'Titular (id del token)', sprint: 4 },
+  { metodo: 'GET', ruta: '/api/v1/historias/pendientes', acceso: 'jwt', roles: ['voluntario'], control: 'Titular (id del token)', sprint: 4 },
+  { metodo: 'POST', ruta: '/api/v1/historias', acceso: 'jwt', roles: ['voluntario'], control: 'Con asistencia registrada · fotos propias', sprint: 4 },
+  { metodo: 'PATCH', ruta: '/api/v1/historias/:id', acceso: 'jwt', roles: ['voluntario'], control: 'Titular (RS2) · fotos propias', sprint: 4 },
+
+  // --- Fotos (Sprint 4) ---
+  { metodo: 'POST', ruta: '/api/v1/archivos', acceso: 'jwt', roles: TODOS, control: 'Uso según rol · solo JPG/PNG/WEBP (por contenido) · máx. 4 MB · 60 por hora', sprint: 4 },
+  { metodo: 'GET', ruta: '/api/v1/archivos/:id', acceso: 'jwt', roles: TODOS, control: 'Perfil e historia: solo el dueño (RS2) · ABAC en fotos de publicaciones', sprint: 4 },
 
   // --- Infraestructura ---
   { metodo: 'GET', ruta: '/api/v1/health', acceso: 'publico', roles: [], control: 'Sin datos', sprint: 1 },

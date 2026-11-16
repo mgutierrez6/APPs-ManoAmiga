@@ -9,4 +9,6 @@ module.exports = {
   Publicacion: require('./Publicacion.model'),
   Sesion: require('./Sesion.model'),
   Auditoria: require('./Auditoria.model'),
+  Archivo: require('./Archivo.model'),
+  Historia: require('./Historia.model'),
 };

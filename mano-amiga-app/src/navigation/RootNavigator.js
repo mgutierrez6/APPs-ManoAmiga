@@ -11,12 +11,20 @@ import LoginScreen from '../screens/auth/LoginScreen';
 import RegistroScreen from '../screens/auth/RegistroScreen';
 import ActividadesScreen from '../screens/actividades/ActividadesScreen';
 import ActividadDetalleScreen from '../screens/actividades/ActividadDetalleScreen';
+import InscripcionListaScreen from '../screens/actividades/InscripcionListaScreen';
 import MisInscripcionesScreen from '../screens/inscripciones/MisInscripcionesScreen';
 import EscanearQRScreen from '../screens/inscripciones/EscanearQRScreen';
+import CalendarioScreen from '../screens/calendario/CalendarioScreen';
 import CampanasScreen from '../screens/comunidad/CampanasScreen';
 import FeedScreen from '../screens/comunidad/FeedScreen';
 import PublicarScreen from '../screens/comunidad/PublicarScreen';
 import CrearCampanaScreen from '../screens/comunidad/CrearCampanaScreen';
+import OrganizacionScreen from '../screens/organizacion/OrganizacionScreen';
+import EditarOrganizacionScreen from '../screens/organizacion/EditarOrganizacionScreen';
+import NuevaPublicacionScreen from '../screens/organizacion/NuevaPublicacionScreen';
+import MiHistoriaScreen from '../screens/historia/MiHistoriaScreen';
+import HistoriasPendientesScreen from '../screens/historia/HistoriasPendientesScreen';
+import ContarHistoriaScreen from '../screens/historia/ContarHistoriaScreen';
 import MisActividadesScreen from '../screens/coordinador/MisActividadesScreen';
 import ActividadFormScreen from '../screens/coordinador/ActividadFormScreen';
 import GestionActividadScreen from '../screens/coordinador/GestionActividadScreen';
@@ -35,19 +43,21 @@ const Stack = createNativeStackNavigator();
 const Tabs = createBottomTabNavigator();
 
 // Opciones que dependen del tema: son funciones para leer los colores actuales (claro u oscuro).
-// Encabezados de las pantallas internas: fondo crema, sin línea, título con la tipografía de la marca.
+// Encabezados de las pantallas internas: fondo crema, sin línea, título con la letra de la marca.
 const opcionesStack = () => ({
   headerTintColor: colores.tinta,
   headerBackButtonDisplayMode: 'minimal',
   headerShadowVisible: false,
   headerStyle: { backgroundColor: colores.crema },
-  headerTitleStyle: { fontFamily: fuentes.titulo, fontSize: 20, color: colores.tinta },
+  headerTitleStyle: { fontFamily: fuentes.tituloMedio, fontSize: 18, color: colores.tinta },
   contentStyle: { backgroundColor: colores.crema },
 });
 
-// Las pestañas no muestran encabezado: cada pantalla tiene su propio "Hero" de color.
+// Las pestañas no muestran encabezado: cada pantalla tiene su propio título grande.
 const opcionesTabs = () => ({ headerShown: false, sceneStyle: { backgroundColor: colores.crema } });
 const barra = (props) => <BarraPestanas {...props} />;
+// Pantallas internas con su propio encabezado de diseño (sin la barra de arriba).
+const sinEncabezado = { headerShown: false };
 
 function temaNavegacion(modo) {
   const base = modo === 'oscuro' ? DarkTheme : DefaultTheme;
@@ -65,30 +75,34 @@ function AuthStack() {
 }
 
 // ---------- Voluntario ----------
+// Las campañas de donación no están en el menú: se entra desde una card en Actividades.
 function VoluntarioTabs() {
   return (
     <Tabs.Navigator screenOptions={opcionesTabs()} tabBar={barra}>
-      <Tabs.Screen name="Actividades" component={ActividadesScreen} options={{ title: 'Actividades', tabBarIcono: 'actividades' }} />
+      <Tabs.Screen name="Actividades" component={ActividadesScreen} options={{ title: 'Actividades', tabBarIcono: 'estrella' }} />
       <Tabs.Screen name="Mapa" component={MapaScreen} options={{ title: 'Mapa', tabBarIcono: 'mapa' }} />
-      <Tabs.Screen name="Campanas" component={CampanasScreen} options={{ title: 'Campañas', tabBarIcono: 'campanas' }} />
       <Tabs.Screen name="MisInscripciones" component={MisInscripcionesScreen} options={{ title: 'Inscripciones', tabBarIcono: 'inscripciones' }} />
+      <Tabs.Screen name="Calendario" component={CalendarioScreen} options={{ title: 'Calendario', tabBarIcono: 'calendario' }} />
       <Tabs.Screen name="Perfil" component={PerfilScreen} options={{ title: 'Perfil', tabBarIcono: 'perfil' }} />
     </Tabs.Navigator>
   );
 }
 
 // ---------- Coordinador ----------
+// "Organización" abre el perfil de SU organización (la toma del token). Campañas de donación tiene su propia pestaña.
 function CoordinadorTabs() {
   return (
     <Tabs.Navigator screenOptions={opcionesTabs()} tabBar={barra}>
       <Tabs.Screen name="MisActividades" component={MisActividadesScreen} options={{ title: 'Mis actividades', tabBarIcono: 'carpeta' }} />
-      <Tabs.Screen name="Campanas" component={CampanasScreen} options={{ title: 'Campañas', tabBarIcono: 'campanas' }} />
-      <Tabs.Screen name="Perfil" component={PerfilScreen} options={{ title: 'Perfil', tabBarIcono: 'perfil' }} />
+      <Tabs.Screen name="Calendario" component={CalendarioScreen} options={{ title: 'Calendario', tabBarIcono: 'calendario' }} />
+      <Tabs.Screen name="CampanasCoord" component={CampanasScreen} options={{ title: 'Campañas', tabBarIcono: 'corazon' }} />
+      <Tabs.Screen name="MiOrganizacion" component={OrganizacionScreen} options={{ title: 'Organización', tabBarIcono: 'organizaciones' }} />
+      <Tabs.Screen name="Perfil" component={PerfilScreen} options={{ title: 'Mi perfil', tabBarIcono: 'perfil' }} />
     </Tabs.Navigator>
   );
 }
 
-// ---------- Administrador (Sprint 2) ----------
+// ---------- Administrador ----------
 function AdminTabs() {
   return (
     <Tabs.Navigator screenOptions={opcionesTabs()} tabBar={barra}>
@@ -109,19 +123,31 @@ function AppStack({ rol }) {
   return (
     <Stack.Navigator screenOptions={opcionesStack()}>
       <Stack.Screen name="Inicio" component={Inicio} options={{ headerShown: false }} />
-      <Stack.Screen name="ActividadDetalle" component={ActividadDetalleScreen} options={{ title: 'Actividad' }} />
-      <Stack.Screen name="Feed" component={FeedScreen} options={{ title: 'Comunidad' }} />
+      <Stack.Screen name="ActividadDetalle" component={ActividadDetalleScreen} options={sinEncabezado} />
+      <Stack.Screen name="Organizacion" component={OrganizacionScreen} options={sinEncabezado} />
+      <Stack.Screen name="Campanas" component={CampanasScreen} options={sinEncabezado} />
+      <Stack.Screen name="Feed" component={FeedScreen} options={{ title: 'Novedades' }} />
       <Stack.Screen name="EditarPerfil" component={EditarPerfilScreen} options={{ title: 'Mis datos' }} />
       <Stack.Screen name="CambiarPassword" component={CambiarPasswordScreen} options={{ title: 'Cambiar contraseña' }} />
       <Stack.Screen name="Accesos" component={AccesosScreen} options={{ title: 'Historial de accesos' }} />
-      {rol === 'voluntario' ? <Stack.Screen name="EscanearQR" component={EscanearQRScreen} options={{ title: 'Marcar asistencia' }} /> : null}
+      {rol === 'voluntario' ? (
+        <>
+          <Stack.Screen name="EscanearQR" component={EscanearQRScreen} options={{ title: 'Marcar asistencia' }} />
+          <Stack.Screen name="InscripcionLista" component={InscripcionListaScreen} options={{ headerShown: false, animation: 'fade', gestureEnabled: false }} />
+          <Stack.Screen name="MiHistoria" component={MiHistoriaScreen} options={sinEncabezado} />
+          <Stack.Screen name="HistoriasPendientes" component={HistoriasPendientesScreen} options={sinEncabezado} />
+          <Stack.Screen name="ContarHistoria" component={ContarHistoriaScreen} options={{ ...sinEncabezado, presentation: 'modal' }} />
+        </>
+      ) : null}
       {rol === 'coordinador' ? (
         <>
           <Stack.Screen name="ActividadForm" component={ActividadFormScreen} options={{ title: 'Actividad' }} />
-          <Stack.Screen name="GestionActividad" component={GestionActividadScreen} options={{ title: 'Gestionar actividad' }} />
+          <Stack.Screen name="GestionActividad" component={GestionActividadScreen} options={sinEncabezado} />
           <Stack.Screen name="MostrarQR" component={MostrarQRScreen} options={{ title: 'QR de asistencia' }} />
-          <Stack.Screen name="Publicar" component={PublicarScreen} options={{ title: 'Nueva publicación' }} />
+          <Stack.Screen name="Publicar" component={PublicarScreen} options={{ title: 'Nueva novedad' }} />
           <Stack.Screen name="CrearCampana" component={CrearCampanaScreen} options={{ title: 'Nueva campaña' }} />
+          <Stack.Screen name="EditarOrganizacion" component={EditarOrganizacionScreen} options={{ title: 'Editar perfil' }} />
+          <Stack.Screen name="NuevaPublicacion" component={NuevaPublicacionScreen} options={{ title: 'Nueva publicación', presentation: 'modal' }} />
         </>
       ) : null}
     </Stack.Navigator>
