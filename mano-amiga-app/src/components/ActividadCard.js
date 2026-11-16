@@ -1,81 +1,67 @@
-import { StyleSheet, Text, View } from 'react-native';
-import { Aparecer, BarraProgreso, Chip, EstadoBadge, Tarjeta } from './ui';
-import { colores, espacio, estilosDinamicos, familiaPara, fuentes } from '../constants/tema';
+import { Pressable, Text, View } from 'react-native';
+import { Aparecer, EstadoBadge } from './ui';
+import { colores, espacio, estilosDinamicos, fuentes } from '../constants/tema';
+import { estiloTipo, tipoDe } from '../constants/tipos';
 import { diaMes, hora } from '../utils/formato';
 
+/** Texto de los lugares: "Cupos ilimitados", "Completo", "Quedan 2" o "12 lugares". */
+export function textoCupos(a) {
+  if (a.cupoIlimitado || a.cuposLibres == null) return { texto: 'Cupos ilimitados', pocos: false };
+  if (a.cuposLibres === 0) return { texto: 'Completo', pocos: false };
+  if (a.cuposLibres <= 3) return { texto: `Quedan ${a.cuposLibres}`, pocos: true };
+  return { texto: `${a.cuposLibres} lugares`, pocos: false };
+}
+
 /**
- * Tarjeta de actividad: "calendario" con tinte de color a la izquierda, barra de cupos y etiquetas de colores. Entra con una animación según su posición en la lista.
+ * Fila de actividad: la fecha en un cuadradito del color de su TIPO y, al lado, título y horario.
+ * Así todas las actividades de un mismo tipo se ven del mismo color (igual que en el mapa y el calendario).
  */
 export default function ActividadCard({ actividad, onPress, mostrarEstado = false, indice = 0 }) {
-  const f = familiaPara(actividad.id);
+  const t = estiloTipo(tipoDe(actividad));
   const { dia, mes } = diaMes(actividad.fechaInicio);
-  const ocupados = actividad.cupo - actividad.cuposLibres;
-  const pocos = actividad.cuposLibres > 0 && actividad.cuposLibres <= 3;
-
+  const cupos = textoCupos(actividad);
   return (
     <Aparecer indice={indice}>
-      <Tarjeta onPress={onPress} estilo={styles.tarjeta}>
-        <View style={styles.fila}>
-          <View style={[styles.calendario, { backgroundColor: f.base }]}>
-            <Text style={[styles.dia, { color: f.texto }]}>{dia}</Text>
-            <Text style={[styles.mes, { color: f.texto }]}>{mes}</Text>
-          </View>
-
-          <View style={styles.cuerpo}>
-            <Text style={styles.titulo} numberOfLines={2}>
-              {actividad.titulo}
-            </Text>
-            <Text style={styles.linea} numberOfLines={1}>
-              {actividad.organizacion?.nombre}
-            </Text>
-            <Text style={styles.linea} numberOfLines={1}>
-              {hora(actividad.fechaInicio)} a {hora(actividad.fechaFin)}
-              {actividad.direccion ? `, ${actividad.direccion}` : ''}
-            </Text>
-            {mostrarEstado ? (
-              <View style={{ marginTop: 6 }}>
-                <EstadoBadge estado={actividad.estado} />
-              </View>
-            ) : null}
-          </View>
+      <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.fila, pressed && { opacity: 0.7 }]}>
+        <View style={[styles.fecha, { backgroundColor: t.color }]}>
+          <Text style={[styles.dia, { color: t.texto }]}>{dia}</Text>
+          <Text style={[styles.mes, { color: t.texto }]}>{mes}</Text>
         </View>
-
-        <View style={styles.cupos}>
-          <View style={styles.cuposTexto}>
-            <Text style={[styles.cuposLibres, pocos && { color: colores.coralTexto }]}>
-              {actividad.cuposLibres === 0 ? 'Cupo completo' : pocos ? `Quedan ${actividad.cuposLibres}` : `${actividad.cuposLibres} lugares libres`}
-            </Text>
-            <Text style={styles.cuposTotal}>
-              {ocupados}/{actividad.cupo}
-            </Text>
-          </View>
-          <BarraProgreso valor={ocupados} total={actividad.cupo} color={pocos || actividad.cuposLibres === 0 ? colores.coral : colores.menta} />
+        <View style={styles.cuerpo}>
+          <Text style={styles.titulo} numberOfLines={2}>
+            {actividad.titulo}
+          </Text>
+          <Text style={styles.linea} numberOfLines={1}>
+            {hora(actividad.fechaInicio)} a {hora(actividad.fechaFin)}
+            {actividad.organizacion?.nombre ? ` · ${actividad.organizacion.nombre}` : ''}
+          </Text>
+          {mostrarEstado ? (
+            <View style={{ marginTop: 6 }}>
+              <EstadoBadge estado={actividad.estado} />
+            </View>
+          ) : null}
         </View>
-
-        {actividad.etiquetas?.length ? (
-          <View style={styles.etiquetas}>
-            {actividad.etiquetas.map((e) => (
-              <Chip key={e.id} texto={e.nombre} clave={e.nombre} />
-            ))}
+        {cupos.pocos ? (
+          <View style={styles.pocos}>
+            <Text style={styles.pocosTexto}>{cupos.texto}</Text>
           </View>
-        ) : null}
-      </Tarjeta>
+        ) : (
+          <Text style={styles.cupos}>{cupos.texto}</Text>
+        )}
+      </Pressable>
     </Aparecer>
   );
 }
 
 const styles = estilosDinamicos(() => ({
-  tarjeta: { padding: espacio.m },
-  fila: { flexDirection: 'row' },
-  calendario: { width: 58, height: 66, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginRight: espacio.m },
-  dia: { fontFamily: fuentes.titulo, fontSize: 26, lineHeight: 28 },
-  mes: { fontFamily: fuentes.negrita, fontSize: 12, letterSpacing: 1 },
-  cuerpo: { flex: 1 },
-  titulo: { fontFamily: fuentes.tituloMedio, fontSize: 18, color: colores.tinta, marginBottom: 2 },
+  fila: { flexDirection: 'row', alignItems: 'center', paddingVertical: espacio.m, borderBottomWidth: 1, borderBottomColor: colores.linea },
+  fecha: { width: 50, height: 54, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginRight: espacio.m },
+  dia: { fontFamily: fuentes.numero, fontSize: 20, lineHeight: 22 },
+  mes: { fontFamily: fuentes.negrita, fontSize: 10.5 },
+  cuerpo: { flex: 1, marginRight: espacio.s },
+  titulo: { fontFamily: fuentes.negrita, fontSize: 15.5, color: colores.tinta },
   linea: { fontFamily: fuentes.texto, color: colores.tintaSuave, fontSize: 13, marginTop: 2 },
-  cupos: { marginTop: espacio.m },
-  cuposTexto: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  cuposLibres: { fontFamily: fuentes.negrita, color: colores.mentaTexto, fontSize: 13 },
-  cuposTotal: { fontFamily: fuentes.textoMedio, color: colores.gris, fontSize: 12 },
-  etiquetas: { flexDirection: 'row', flexWrap: 'wrap', marginTop: espacio.m },
+  cupos: { fontFamily: fuentes.textoMedio, color: colores.tintaSuave, fontSize: 12, maxWidth: 80, textAlign: 'right' },
+  pocos: { backgroundColor: colores.coralSuave, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 },
+  pocosTexto: { fontFamily: fuentes.negrita, color: colores.coralTexto, fontSize: 11.5 },
 }));

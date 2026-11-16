@@ -85,7 +85,7 @@ export function ReauthProvider({ children }) {
 
 const styles = estilosDinamicos(() => ({
   fondo: { flex: 1, backgroundColor: 'rgba(7,59,76,0.55)', justifyContent: 'center', padding: espacio.l },
-  caja: { backgroundColor: colores.tarjeta, borderRadius: 28, padding: espacio.l, ...sombra },
+  caja: { backgroundColor: colores.tarjeta, borderRadius: 18, padding: espacio.l },
   marca: { alignItems: 'center', marginBottom: 4 },
   titulo: { fontFamily: fuentes.titulo, fontSize: 22, color: colores.tinta, textAlign: 'center', marginVertical: espacio.s },
   centro: { textAlign: 'center', marginBottom: espacio.m },

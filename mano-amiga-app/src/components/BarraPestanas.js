@@ -1,78 +1,58 @@
-import { useEffect, useRef } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colores, espacio, estilosDinamicos, fuentes, sombra } from '../constants/tema';
+import { colores, espacio, estilosDinamicos, fuentes } from '../constants/tema';
 import Icono from './Icono';
 
-// Familia de color de la "burbuja" de cada pestaña activa (en orden).
-const TONOS = ['coral'];
-
-/** Barra de pestañas flotante: la pestaña activa se agranda en una burbuja coral con su nombre. */
+/**
+ * Menú de abajo: la pestaña activa es una "pastilla" azul oscuro con el ícono y el nombre;
+ * las demás muestran solo el ícono (con su nombre para lectores de pantalla).
+ */
 export default function BarraPestanas({ state, descriptors, navigation }) {
   const insets = useSafeAreaInsets();
+  const pocas = state.routes.length <= 3;
   return (
-    <View style={[styles.contenedor, { paddingBottom: Math.max(insets.bottom, espacio.s) }]}>
-      <View style={styles.barra}>
-        {state.routes.map((route, i) => {
-          const { options } = descriptors[route.key];
-          const activa = state.index === i;
-          const etiqueta = options.title ?? route.name;
-          const alTocar = () => {
-            const evento = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-            if (!activa && !evento.defaultPrevented) navigation.navigate(route.name);
-          };
-          return (
-            <Pestana
-              key={route.key}
-              activa={activa}
-              icono={options.tabBarIcono}
-              etiqueta={etiqueta}
-              tono={TONOS[i % TONOS.length]}
-              onPress={alTocar}
-            />
-          );
-        })}
-      </View>
+    <View style={[styles.barra, { paddingBottom: Math.max(insets.bottom, espacio.m) }, pocas && { justifyContent: 'space-around' }]}>
+      {state.routes.map((route, i) => {
+        const { options } = descriptors[route.key];
+        const activa = state.index === i;
+        const etiqueta = options.title ?? route.name;
+        const alTocar = () => {
+          const evento = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+          if (!activa && !evento.defaultPrevented) navigation.navigate(route.name);
+        };
+        return (
+          <Pressable
+            key={route.key}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activa }}
+            accessibilityLabel={etiqueta}
+            onPress={alTocar}
+            hitSlop={6}
+            style={({ pressed }) => [activa ? styles.activa : styles.pestana, pressed && { opacity: 0.7 }]}
+          >
+            <Icono nombre={options.tabBarIcono} color={activa ? colores.crema : colores.tintaSuave} tamano={activa ? 18 : 22} grosor={2} />
+            {activa ? (
+              <Text numberOfLines={1} style={styles.etiqueta}>
+                {etiqueta}
+              </Text>
+            ) : null}
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
 
-function Pestana({ activa, icono, etiqueta, tono, onPress }) {
-  const v = useRef(new Animated.Value(activa ? 1 : 0)).current;
-  useEffect(() => {
-    Animated.spring(v, { toValue: activa ? 1 : 0, useNativeDriver: false, speed: 18, bounciness: 9 }).start();
-  }, [activa, v]);
-
-  const fondo = v.interpolate({ inputRange: [0, 1], outputRange: ['rgba(0,0,0,0)', colores[tono]] });
-  const colorActivo = colores.blanco;
-
-  return (
-    <Pressable accessibilityRole="tab" accessibilityState={{ selected: activa }} accessibilityLabel={etiqueta} onPress={onPress} style={[styles.pestana, activa && styles.pestanaActiva]}>
-      <Animated.View style={[styles.burbuja, { backgroundColor: fondo }]}>
-        <Icono nombre={icono} color={activa ? colorActivo : colores.tintaSuave} tamano={22} />
-        {activa ? (
-          <Text numberOfLines={1} style={[styles.etiqueta, { color: colorActivo }]}>
-            {etiqueta}
-          </Text>
-        ) : null}
-      </Animated.View>
-    </Pressable>
-  );
-}
-
 const styles = estilosDinamicos(() => ({
-  contenedor: { backgroundColor: colores.crema, paddingHorizontal: espacio.m, paddingTop: espacio.s },
   barra: {
     flexDirection: 'row',
-    backgroundColor: colores.tarjeta,
-    borderRadius: 999,
-    padding: 6,
-    borderWidth: 1,
-    borderColor: colores.borde,
-    ...sombra,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colores.crema,
+    paddingTop: espacio.m,
+    paddingHorizontal: espacio.l,
   },
-  pestana: { flex: 1, alignItems: 'center' },
-  pestanaActiva: { flex: 2.2 },
-  burbuja: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 999, paddingVertical: 10, paddingHorizontal: 12, alignSelf: 'stretch' },
-  etiqueta: { fontFamily: fuentes.negrita, fontSize: 13, marginLeft: 6, flexShrink: 1 },
+  pestana: { padding: 11 },
+  activa: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: colores.tinta, paddingVertical: 11, paddingHorizontal: 15, borderRadius: 999, maxWidth: 190 },
+  etiqueta: { fontFamily: fuentes.negrita, fontSize: 13, color: colores.crema },
 }));

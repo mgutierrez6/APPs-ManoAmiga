@@ -1,68 +1,79 @@
+/*
+ Tema de Mano Amiga (rediseño "Paleta 2": Pink Bubblegum, Sunshine y Lime Ripple).
+ - Fondo crema y texto azul oscuro en modo claro; fondo azul muy oscuro y texto crema en modo oscuro.
+ - Los nombres de las "familias" (coral, sol, menta, oceano, lila) se mantienen para no romper las
+   pantallas: lo que cambió es el color que tiene cada una.
+ - Los colores de cada TIPO de actividad están en constants/tipos.js.
+ */
 const marca = {
-  coral: '#EF476F',
-  coralOscuro: '#C9304F',
-  sol: '#FFD166',
-  solOscuro: '#E0A930',
-  menta: '#06D6A0',
-  mentaOscuro: '#05A87E',
-  oceano: '#118AB2',
-  oceanoOscuro: '#0B6A8A',
-  lila: '#9B5DE5',
-  lilaOscuro: '#7A3FC4',
-  durazno: '#FFB4A2',
+  coral: '#E763A5', // Pink Bubblegum: color principal (botones, destacados)
+  coralOscuro: '#C94489',
+  sol: '#F9C386', // Sunshine
+  solOscuro: '#E3A45C',
+  menta: '#B7D665', // Lime Ripple
+  mentaOscuro: '#98B847',
+  oceano: '#407ADD', // Sky
+  oceanoOscuro: '#2F5FB5',
+  lila: '#B9D6FC', // Powder blue
+  lilaOscuro: '#8DB4E8',
+  durazno: '#F77279', // Coral red
+  limon: '#FFF184', // Lemon sorbet
   blanco: '#FFFFFF',
-  tintaFija: '#073B4C',
+  tintaFija: '#073B4C', // texto sobre cualquier color de la paleta (siempre azul oscuro)
   peligro: '#D62246',
-  primario: '#EF476F',
-  secundario: '#118AB2',
-  advertencia: '#E0A930',
+  primario: '#E763A5',
+  secundario: '#407ADD',
+  advertencia: '#E3A45C',
 };
 
 export const paletas = {
   claro: {
     ...marca,
-    coralSuave: '#FDE3EA',
-    solSuave: '#FFF3D1',
-    mentaSuave: '#D5F8EE',
-    oceanoSuave: '#D8EEF6',
-    lilaSuave: '#EEE3FB',
-    neutroSuave: '#ECEFF1',
-    // Texto sobre los tintes suaves: siempre colores de la paleta (los "Oscuro" o la tinta).
-    coralTexto: marca.coralOscuro,
+    coralSuave: '#FBE0EE',
+    solSuave: '#FDEBD3',
+    mentaSuave: '#EAF3D2',
+    oceanoSuave: '#DCE7FA',
+    lilaSuave: '#E6F0FE',
+    neutroSuave: '#F1EADF',
+    beige: '#F3E9DA', // card de Campañas de donación
+    coralTexto: '#A8326F',
     solTexto: marca.tintaFija,
     mentaTexto: marca.tintaFija,
-    oceanoTexto: marca.oceanoOscuro,
-    lilaTexto: marca.lilaOscuro,
+    oceanoTexto: '#2F5FB5',
+    lilaTexto: marca.tintaFija,
     tinta: '#073B4C', // texto principal
     tintaSuave: '#4A6572', // texto secundario
-    crema: '#FFF8EE', // fondo general
+    crema: '#FBF7F0', // fondo general
     tarjeta: '#FFFFFF', // superficies (tarjetas, inputs, barra de pestañas)
-    campoFoco: '#FFFDFB',
-    pista: '#F1E8DA', // fondo de barras de progreso
-    borde: '#EADFCF',
+    campoFoco: '#FFFFFF',
+    pista: '#F1EADF', // fondo de barras de progreso y segmentos
+    borde: '#ECE3D6',
+    linea: '#F1EADF', // separadores finos entre filas
     gris: '#8A9BA3',
     sombra: '#073B4C',
   },
   oscuro: {
     ...marca,
-    coralSuave: '#4A1F2E',
-    solSuave: '#463813',
-    mentaSuave: '#0F3D33',
-    oceanoSuave: '#11344A',
-    lilaSuave: '#33224D',
-    neutroSuave: '#24363F',
-    coralTexto: '#FF9BB2',
-    solTexto: '#FFD166',
-    mentaTexto: '#5CE6BF',
-    oceanoTexto: '#82D1EE',
-    lilaTexto: '#CDB0F5',
-    tinta: '#F4EDE2',
+    coralSuave: '#4A2238',
+    solSuave: '#4A3A22',
+    mentaSuave: '#33421F',
+    oceanoSuave: '#1C3157',
+    lilaSuave: '#2A3D57',
+    neutroSuave: '#24414C',
+    beige: '#22383F',
+    coralTexto: '#F59AC6',
+    solTexto: '#F9C386',
+    mentaTexto: '#C9E38A',
+    oceanoTexto: '#9DBCF2',
+    lilaTexto: '#C8DEFB',
+    tinta: '#FBF7F0',
     tintaSuave: '#A9BCC4',
-    crema: '#0E1C24',
-    tarjeta: '#182B35',
-    campoFoco: '#1E3440',
-    pista: '#2A3F4A',
-    borde: '#2C4552',
+    crema: '#0E1E24',
+    tarjeta: '#17303A',
+    campoFoco: '#1F3A45',
+    pista: '#1F3A45',
+    borde: '#2C4A56',
+    linea: '#1F3A45',
     gris: '#7E949D',
     sombra: '#000000',
   },
@@ -113,27 +124,38 @@ export function estilosDinamicos(fabrica) {
   );
 }
 
-// Familias cargadas en App.js con expo-font (Fredoka para títulos, Nunito para texto).
+/*
+ Fuentes (se cargan en App.js):
+  - Títulos grandes: Pearl Jean (assets/fonts/PearlJean.ttf).
+  - Números y subtítulos: Bricolage Grotesque.
+  - Texto: Inter (la más parecida a la letra del sistema de Apple, y se ve igual en Android).
+ */
 export const fuentes = {
-  titulo: 'Fredoka_700Bold',
-  tituloMedio: 'Fredoka_600SemiBold',
-  texto: 'Nunito_400Regular',
-  textoMedio: 'Nunito_600SemiBold',
-  negrita: 'Nunito_800ExtraBold',
+  titulo: 'PearlJean',
+  tituloMedio: 'BricolageGrotesque_700Bold',
+  numero: 'BricolageGrotesque_800ExtraBold',
+  texto: 'Inter_400Regular',
+  textoMedio: 'Inter_500Medium',
+  semi: 'Inter_600SemiBold',
+  negrita: 'Inter_700Bold',
 };
+
+/** Estilo de los títulos grandes con Pearl Jean (la letra es alta: se le ajusta el interlineado). */
+export const tituloGrande = (tamano = 40) => ({ fontFamily: fuentes.titulo, fontSize: tamano, lineHeight: Math.round(tamano * 1.02), letterSpacing: 0.3 });
 
 export const espacio = { xs: 4, s: 8, m: 12, l: 16, xl: 24, xxl: 32 };
 
+// Esquinas bien redondeadas (tarjetas tipo "pastilla").
 export const radio = 20;
 
-// Cada "familia" de color: fondo sólido, versión oscura (sombra 3D del botón) y tinte suave.
+// Cada "familia" de color: fondo sólido, versión oscura, tinte suave y texto.
 const NOMBRES_FAMILIA = ['coral', 'sol', 'menta', 'oceano', 'lila'];
-const TEXTO_FAMILIA = { coral: 'blanco', sol: 'tintaFija', menta: 'tintaFija', oceano: 'blanco', lila: 'blanco' };
+const TEXTO_FAMILIA = { coral: 'blanco', sol: 'tintaFija', menta: 'tintaFija', oceano: 'blanco', lila: 'tintaFija' };
 export const familias = estilosDinamicos(() =>
   NOMBRES_FAMILIA.map((n) => ({ base: colores[n], oscuro: colores[`${n}Oscuro`], suave: colores[`${n}Suave`], texto: colores[TEXTO_FAMILIA[n]], textoSuave: colores[`${n}Texto`] }))
 );
 
-/** Devuelve una familia de color estable a partir de un texto o número (misma etiqueta = mismo color). */
+/** Devuelve una familia de color estable a partir de un texto o número (misma clave = mismo color). */
 export function familiaPara(clave) {
   const s = String(clave ?? '');
   let h = 0;
@@ -152,7 +174,6 @@ export const estilosEstado = estilosDinamicos(() => ({
   publicada: { fondo: colores.mentaSuave, texto: colores.mentaTexto },
   finalizada: { fondo: colores.neutroSuave, texto: colores.tintaSuave },
   activa: { fondo: colores.mentaSuave, texto: colores.mentaTexto },
-  // Sprint 2
   admin: { fondo: colores.lilaSuave, texto: colores.lilaTexto },
   inactiva: { fondo: colores.neutroSuave, texto: colores.tintaSuave },
 }));
@@ -165,11 +186,5 @@ export function emojiEtiqueta() {
   return '';
 }
 
-// Sombra suave "de papel" para tarjetas.
-export const sombra = {
-  shadowColor: '#000000',
-  shadowOpacity: 0.05,
-  shadowRadius: 10,
-  shadowOffset: { width: 0, height: 3 },
-  elevation: 1,
-};
+// Diseño plano: las superficies se separan por color, no con sombras.
+export const sombra = {};

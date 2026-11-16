@@ -76,7 +76,8 @@ export function LogoAnimado({ tamano = 120, conNombre = true }) {
           </Svg>
         </Animated.View>
       </Animated.View>
-      {conNombre ? <Text style={styles.nombre}>Mano Amiga</Text> : null}
+      {/* En minúscula a propósito: con Pearl Jean las mayúsculas quedan más grandes que el resto. */}
+      {conNombre ? <Text style={styles.nombre}>mano amiga</Text> : null}
     </View>
   );
 }

@@ -56,7 +56,7 @@ const styles = estilosDinamicos(() => ({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: colores.borde,
-    borderRadius: 16,
+    borderRadius: 12,
     paddingHorizontal: espacio.m,
     paddingVertical: 12,
     backgroundColor: colores.tarjeta,

@@ -32,7 +32,7 @@ export default function LoginScreen({ navigation }) {
     <Pantalla estilo={{ paddingTop: insets.top }}>
       <View style={styles.marca}>
         <LogoAnimado tamano={112} />
-        <Text style={styles.lema}>Sumate, ayudá y hacé que cada hora cuente</Text>
+        <Text style={styles.lema}>Ayudá y hacé que cada hora cuente</Text>
       </View>
 
       <View style={styles.formulario}>
@@ -40,7 +40,7 @@ export default function LoginScreen({ navigation }) {
         <Campo etiqueta="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoComplete="email" placeholder="tu@email.com" />
         <Campo etiqueta="Contraseña" value={password} onChangeText={setPassword} secureTextEntry autoComplete="password" placeholder="••••••••" />
         <Boton titulo="Entrar" onPress={ingresar} cargando={enviando} />
-        <Boton titulo="Quiero sumarme" variante="sol" onPress={() => navigation.navigate('Registro')} />
+        <Boton titulo="Registrarse" variante="sol" onPress={() => navigation.navigate('Registro')} />
       </View>
     </Pantalla>
   );
@@ -49,5 +49,5 @@ export default function LoginScreen({ navigation }) {
 const styles = estilosDinamicos(() => ({
   marca: { alignItems: 'center', marginTop: espacio.xxl, marginBottom: espacio.xl },
   lema: { fontFamily: fuentes.textoMedio, color: colores.tintaSuave, marginTop: espacio.s, textAlign: 'center', fontSize: 15 },
-  formulario: { backgroundColor: colores.tarjeta, borderRadius: 24, padding: espacio.l, borderWidth: 1, borderColor: colores.borde, ...sombra },
+  formulario: { backgroundColor: colores.tarjeta, borderRadius: 16, padding: espacio.l, borderWidth: 1, borderColor: colores.borde, ...sombra },
 }));
