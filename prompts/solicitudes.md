@@ -12,3 +12,4 @@ Agregá tema claro, oscuro y automático, guardado en el perfil del usuario.
 
 Escribí la guía para desplegar en la instancia gratuita de EC2 respetando la DMZ y la red segura: security group, IP fija, dominio gratis, HTTPS con Let's Encrypt y docker compose. La base queda en Atlas porque la instancia tiene poca RAM.
 
+Preciso que investigues en la web por campañas de donaciones reales, voluntariados, campañas, etc. Y crea un archivo seed .js para cargarlos todos juntos a la pagina desde el back.
