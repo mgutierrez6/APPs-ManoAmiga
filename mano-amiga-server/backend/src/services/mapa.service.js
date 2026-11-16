@@ -1,5 +1,6 @@
 const { Actividad, Campana } = require('../models');
 const permisos = require('./permisos');
+const { tipoDe } = require('./dto');
 
 /* R5 Puntos del mapa: actividades publicadas y puntos de acopio de campañas activas.
  
@@ -33,7 +34,7 @@ async function actividades(usuario, q) {
     .sort({ fechaInicio: 1 })
     .limit(MAXIMO)
     .populate({ path: 'organizacionId', select: 'nombre' })
-    .populate({ path: 'etiquetas', select: 'nombre' })
+    .populate({ path: 'etiquetas', select: 'nombre clase' })
     .lean();
 
   return lista.map((a) => ({
@@ -42,11 +43,13 @@ async function actividades(usuario, q) {
     titulo: a.titulo,
     organizacion: a.organizacionId ? a.organizacionId.nombre : '',
     etiquetas: (a.etiquetas || []).map((e) => e.nombre),
+    tipoActividad: tipoDe(a.etiquetas), // "tipo" ya se usa para actividad/acopio
     ubicacion: latLng(a.ubicacion),
     direccion: a.direccion || '',
     fechaInicio: a.fechaInicio,
     fechaFin: a.fechaFin,
-    cuposLibres: Math.max(0, a.cupo - a.inscriptos),
+    cupoIlimitado: a.cupo == null,
+    cuposLibres: a.cupo == null ? null : Math.max(0, a.cupo - a.inscriptos),
   }));
 }
 

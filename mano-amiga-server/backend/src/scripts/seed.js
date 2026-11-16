@@ -1,6 +1,7 @@
 /**
  * Carga datos iniciales para desarrollo:  npm run seed
- *  - Catálogo de etiquetas (con cuáles son sensibles para la regla ABAC)
+ *  - Catálogo de etiquetas (con cuáles son sensibles para la regla ABAC y cuáles son "tipos" de actividad
+ *    -con color e ícono en la app- y cuáles solo "características")
  *  - Un administrador, una organización de prueba y un coordinador
  *  - (Opcional) un voluntario judicial para probar ABAC
  *
@@ -13,16 +14,18 @@ const db = require('../config/db');
 const { Etiqueta, Organizacion, Usuario } = require('../models');
 
 const ETIQUETAS = [
-  { nombre: 'Ollas populares', sensible: false },
-  { nombre: 'Medioambiente', sensible: false },
-  { nombre: 'Urgente', sensible: false },
-  { nombre: 'Donaciones', sensible: false },
-  { nombre: 'Adultos mayores', sensible: false },
-  { nombre: 'Apto programa judicial', sensible: false },
-  { nombre: 'Apoyo escolar', sensible: true },
-  { nombre: 'Contacto con menores', sensible: true },
-  { nombre: 'Hogares de niños', sensible: true },
-  { nombre: 'Oratorios', sensible: true },
+  { nombre: 'Ollas populares', sensible: false, clase: 'tipo' },
+  { nombre: 'Medioambiente', sensible: false, clase: 'tipo' },
+  { nombre: 'Urgente', sensible: false, clase: 'caracteristica' },
+  { nombre: 'Donaciones', sensible: false, clase: 'tipo' },
+  { nombre: 'Adultos mayores', sensible: false, clase: 'tipo' },
+  { nombre: 'Apto programa judicial', sensible: false, clase: 'caracteristica' },
+  { nombre: 'Apoyo escolar', sensible: true, clase: 'tipo' },
+  { nombre: 'Contacto con menores', sensible: true, clase: 'caracteristica' },
+  { nombre: 'Hogares de niños', sensible: true, clase: 'tipo' },
+  { nombre: 'Oratorios', sensible: true, clase: 'tipo' },
+  { nombre: 'Animales', sensible: false, clase: 'tipo' }, // refugios, rescate, adopciones
+  { nombre: 'Otros', sensible: false, clase: 'tipo' }, // para lo que no entra en los demás tipos
 ];
 
 function env(nombre, obligatoria = true) {
@@ -50,7 +53,7 @@ async function main() {
   console.log('Etiquetas:');
   for (const e of ETIQUETAS) {
     await Etiqueta.updateOne({ nombre: e.nombre }, { $set: e }, { upsert: true });
-    console.log(`  ✔ ${e.nombre}${e.sensible ? '  (sensible)' : ''}`);
+    console.log(`  ✔ ${e.nombre}${e.sensible ? '  (sensible)' : ''}${e.clase === 'caracteristica' ? '  (característica)' : ''}`);
   }
 
   console.log('Organización:');

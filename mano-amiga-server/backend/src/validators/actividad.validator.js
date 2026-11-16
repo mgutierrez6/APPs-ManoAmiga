@@ -8,7 +8,8 @@ const campos = {
   direccion: Joi.string().trim().max(200).allow(''),
   fechaInicio: Joi.date().iso(),
   fechaFin: Joi.date().iso(),
-  cupo: Joi.number().integer().min(1).max(10000),
+  // null = cupos ilimitados. Se exige mandarlo explícito al crear, para que nadie quede "sin límite" por olvido.
+  cupo: Joi.number().integer().min(1).max(10000).allow(null),
 };
 
 // La organización NO viene en el body: se toma del token del coordinador.
@@ -22,6 +23,8 @@ const crear = {
     fechaInicio: campos.fechaInicio.required(),
     fechaFin: campos.fechaFin.greater(Joi.ref('fechaInicio')).required(),
     cupo: campos.cupo.required(),
+    // Pregunta obligatoria: si es sí, la actividad no se muestra a voluntarios judiciales (ABAC).
+    contactoMenores: Joi.boolean().required(),
   }),
 };
 
@@ -36,6 +39,7 @@ const actualizar = {
     fechaInicio: campos.fechaInicio,
     fechaFin: campos.fechaFin,
     cupo: campos.cupo,
+    contactoMenores: Joi.boolean(),
   }).min(1),
 };
 
@@ -46,6 +50,8 @@ const listar = {
     lng: Joi.number().min(-180).max(180),
     radio: Joi.number().min(0.1).max(200).default(10), // km
     mias: Joi.boolean().default(false), // coordinador: actividades de su organización
+    desde: Joi.date().iso(), // calendario: actividades que terminan después de "desde"...
+    hasta: Joi.date().iso(), // ...y empiezan antes de "hasta"
     ...paginacion,
   }).and('lat', 'lng'),
 };

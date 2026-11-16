@@ -71,6 +71,25 @@ const ORGANIZACIONES = {
   olla: { nombre: 'Olla Barrial La Teja (ficticia)', contacto: 'ollalateja@manoamiga.test', convenioOSLA: true },
 };
 
+// Perfil público de cada organización (textos de demo). rubro y zona se ven debajo del nombre.
+const PERFILES = {
+  techo: { rubro: 'Vivienda', zona: 'Montevideo y Canelones', descripcion: 'Trabajamos junto a familias de asentamientos para construir viviendas de emergencia y comunidad.' },
+  bau: { rubro: 'Alimentación', zona: 'Todo el país', descripcion: 'Recuperamos alimentos aptos que se iban a desperdiciar y los llevamos a organizaciones sociales.' },
+  redalco: { rubro: 'Alimentación', zona: 'Montevideo', descripcion: 'Rescatamos frutas y verduras en la UAM y las repartimos cada semana.' },
+  cruzroja: { rubro: 'Salud y emergencias', zona: 'Todo el país', descripcion: 'Formación en primeros auxilios y apoyo en emergencias y eventos.' },
+  ronald: { rubro: 'Infancia y familias', zona: 'Montevideo y Tacuarembó', descripcion: 'Un hogar lejos de casa para las familias de niños en tratamiento.' },
+  scremini: { rubro: 'Salud', zona: 'Montevideo', descripcion: 'Acompañamos a niños con cáncer y a sus familias.' },
+  ash: { rubro: 'Animales', zona: 'Montevideo', descripcion: 'Rescatamos, cuidamos y buscamos familia para perros y gatos.' },
+  aldeas: { rubro: 'Infancia', zona: 'Montevideo', descripcion: 'Cuidado y acompañamiento de niñas, niños y adolescentes.' },
+  abrojo: { rubro: 'Educación', zona: 'Montevideo', descripcion: 'Proyectos educativos y comunitarios con jóvenes.' },
+  tacuru: { rubro: 'Comunidad', zona: 'Casavalle', descripcion: 'Talleres, oratorio y formación para jóvenes del barrio.' },
+  huellas: { rubro: 'Situación de calle', zona: 'Montevideo', descripcion: 'Recorridas, comedor y acompañamiento a personas en situación de calle.' },
+  costa: { rubro: 'Medioambiente', zona: 'Costa uruguaya', descripcion: 'Limpiamos las playas una mañana por semana. Traé ganas, nosotros ponemos los guantes.' },
+  olla: { rubro: 'Ollas populares', zona: 'La Teja', descripcion: 'Cocinamos y servimos comida caliente para el barrio.' },
+};
+
+const CARACTERISTICAS = ['Urgente', 'Apto programa judicial', 'Contacto con menores'];
+
 // Un coordinador (inventado) por organización: coord.<clave>@manoamiga.test
 const COORDINADORES = {
   techo: ['Martín', 'Olivera'],
@@ -103,7 +122,7 @@ const ACTIVIDADES = [
   { org: 'techo', titulo: 'Construcción de viviendas de emergencia', lugar: 'colon', dia: 10, hora: 8, horas: 10, cupo: 40,
     etiquetas: ['Urgente'],
     descripcion: 'Fin de semana de construcción junto a familias de un asentamiento de Colón. Se arma una vivienda de emergencia por cuadrilla. No hace falta experiencia: se forma a todos al llegar. Traer ropa cómoda, guantes y agua.' },
-  { org: 'techo', titulo: 'Colecta TECHO: alcancía en Tres Cruces', lugar: 'tresCruces', dia: 5, hora: 10, horas: 4, cupo: 12,
+  { org: 'techo', titulo: 'Colecta TECHO: alcancía en Tres Cruces', lugar: 'tresCruces', dia: 5, hora: 10, horas: 4, cupo: null,
     etiquetas: ['Donaciones', 'Apto programa judicial'],
     descripcion: 'Turno de colecta con alcancía en la terminal. Lo recaudado va a la construcción de las viviendas que faltan para llegar a la meta del año. Se trabaja de a parejas.' },
   { org: 'techo', titulo: 'Apoyo escolar en la comunidad', lugar: 'piedrasBlancas', dia: 3, hora: 17, horas: 2, cupo: 8,
@@ -209,7 +228,7 @@ const ACTIVIDADES = [
   { org: 'costa', titulo: 'Limpieza de la Playa del Cerro', lugar: 'playaCerro', dia: 19, hora: 9, horas: 3, cupo: 30,
     etiquetas: ['Medioambiente', 'Apto programa judicial'],
     descripcion: 'Jornada de limpieza en la Playa del Cerro con vecinos y escuelas de la zona.' },
-  { org: 'costa', titulo: 'Limpieza de Playa Brava (Punta del Este)', lugar: 'playaBrava', dia: 26, hora: 10, horas: 3, cupo: 25,
+  { org: 'costa', titulo: 'Limpieza de Playa Brava (Punta del Este)', lugar: 'playaBrava', dia: 26, hora: 10, horas: 3, cupo: null,
     etiquetas: ['Medioambiente'],
     descripcion: 'Limpieza antes del comienzo de la temporada. Hay traslado desde Montevideo para quienes se anoten.' },
   { org: 'costa', titulo: 'Limpieza de la Playa Malvín', lugar: 'playaMalvin', dia: -10, hora: 9, horas: 3, cupo: 30,
@@ -332,10 +351,13 @@ async function main() {
   const hash = await bcrypt.hash(passwordDemo, config.bcryptCosto); // un solo hash para todas: es más rápido
 
   // Etiquetas (por si no se corrió el seed básico; no cambia las que ya existen)
-  const etiquetasBase = ['Ollas populares', 'Medioambiente', 'Urgente', 'Donaciones', 'Adultos mayores', 'Apto programa judicial'];
+  const etiquetasBase = ['Ollas populares', 'Medioambiente', 'Urgente', 'Donaciones', 'Adultos mayores', 'Apto programa judicial', 'Animales', 'Otros'];
   const sensibles = ['Apoyo escolar', 'Contacto con menores', 'Hogares de niños', 'Oratorios'];
   for (const n of etiquetasBase) await Etiqueta.updateOne({ nombre: n }, { $setOnInsert: { nombre: n, sensible: false } }, { upsert: true });
   for (const n of sensibles) await Etiqueta.updateOne({ nombre: n }, { $setOnInsert: { nombre: n, sensible: true } }, { upsert: true });
+  // Tipos de actividad (color e ícono en la app) vs. características (Urgente, Apto judicial, Contacto con menores).
+  await Etiqueta.updateMany({ nombre: { $in: CARACTERISTICAS } }, { $set: { clase: 'caracteristica' } });
+  await Etiqueta.updateMany({ nombre: { $nin: CARACTERISTICAS } }, { $set: { clase: 'tipo' } });
   const etiquetas = new Map((await Etiqueta.find().lean()).map((e) => [e.nombre, e._id]));
   const idsEtiquetas = (nombres) => nombres.map((n) => {
     if (!etiquetas.has(n)) throw new Error(`Etiqueta desconocida: ${n}`);
@@ -354,7 +376,7 @@ async function main() {
   for (const [clave, o] of Object.entries(ORGANIZACIONES)) {
     orgs[clave] = await Organizacion.findOneAndUpdate(
       { nombre: o.nombre },
-      { $set: { contacto: o.contacto, convenioOSLA: o.convenioOSLA, activa: true } },
+      { $set: { contacto: o.contacto, convenioOSLA: o.convenioOSLA, activa: true, ...PERFILES[clave] } },
       { upsert: true, returnDocument: 'after' }
     );
     const [nombre, apellido] = COORDINADORES[clave];
@@ -380,7 +402,7 @@ async function main() {
       { titulo: a.titulo, organizacionId: orgs[a.org]._id },
       {
         $set: {
-          descripcion: a.descripcion, creadaPor: coords[a.org]._id, etiquetas: idsEtiquetas(a.etiquetas),
+          descripcion: a.descripcion, creadaPor: coords[a.org]._id, etiquetas: idsEtiquetas(a.etiquetas.some((n) => !CARACTERISTICAS.includes(n)) ? a.etiquetas : [...a.etiquetas, 'Otros']),
           ubicacion: punto(a.lugar), direccion: LUGARES[a.lugar][2], fechaInicio: inicio, fechaFin: fin,
           cupo: a.cupo, estado: a.dia < 0 ? 'finalizada' : 'publicada',
         },

@@ -10,7 +10,7 @@ const dto = require('./dto');
 
 const RADIO_TIERRA_KM = 6378.1;
 const POBLAR = [
-  { path: 'etiquetas', select: 'nombre' },
+  { path: 'etiquetas', select: 'nombre clase' },
   { path: 'organizacionId', select: 'nombre' },
 ];
 
@@ -20,6 +20,41 @@ async function validarEtiquetas(ids) {
   if (!ids || ids.length === 0) return;
   const existentes = await Etiqueta.countDocuments({ _id: { $in: ids } });
   if (existentes !== ids.length) throw ApiError.badRequest('ETIQUETA_INEXISTENTE', 'Alguna etiqueta no existe');
+}
+
+/*
+ Etiquetas de una actividad:
+  - Del cliente solo se aceptan TIPOS. Las características (Urgente, Apto programa judicial...) ya no se usan
+    y se descartan.
+  - "¿Hay contacto con menores?" es una pregunta OBLIGATORIA (contactoMenores: true/false). Si es sí, el
+    servidor le agrega la etiqueta sensible "Contacto con menores": así la regla ABAC la oculta a los
+    voluntarios judiciales. Nadie puede saltearse la pregunta ni agregar o sacar esa etiqueta a mano.
+  - Si no queda ningún tipo, la actividad pasa a "Otros".
+ */
+const CONTACTO_MENORES = 'Contacto con menores';
+
+async function etiquetaContactoMenores() {
+  // upsert: si por algún motivo la etiqueta no existe, se crea (y siempre queda marcada como sensible).
+  return Etiqueta.findOneAndUpdate(
+    { nombre: CONTACTO_MENORES },
+    { $setOnInsert: { nombre: CONTACTO_MENORES }, $set: { sensible: true, clase: 'caracteristica' } },
+    { upsert: true, returnDocument: 'after' }
+  ).lean();
+}
+
+async function armarEtiquetas(ids = [], contactoMenores = false) {
+  const pedidos = ids.map(String);
+  const tipos = pedidos.length
+    ? (await Etiqueta.find({ _id: { $in: pedidos }, clase: { $ne: 'caracteristica' }, nombre: { $ne: CONTACTO_MENORES } }).distinct('_id')).map(String)
+    : [];
+  // Cada actividad tiene UN solo tipo: si llegan varios, queda el primero.
+  let lista = pedidos.filter((i) => tipos.includes(i)).slice(0, 1);
+  if (lista.length === 0) {
+    const otros = await Etiqueta.findOne({ nombre: 'Otros' }).select('_id').lean();
+    if (otros) lista = [String(otros._id)];
+  }
+  if (contactoMenores) lista.push(String((await etiquetaContactoMenores())._id));
+  return lista;
 }
 
 /* Listado con filtro ABAC DENTRO de la consulta (5.3): las actividades sensibles nunca salen del servidor
@@ -37,6 +72,10 @@ async function listar(usuario, q) {
   }
 
   if (q.etiqueta) condiciones.push({ etiquetas: q.etiqueta });
+
+  // Rango de fechas (lo usa el calendario): actividades que se cruzan con [desde, hasta].
+  if (q.desde) condiciones.push({ fechaFin: { $gte: q.desde } });
+  if (q.hasta) condiciones.push({ fechaInicio: { $lte: q.hasta } });
 
   if (usuario.esJudicial) {
     const sensibles = await permisos.idsEtiquetasSensibles();
@@ -74,12 +113,12 @@ async function crear(usuario, datos, ctx) {
   const act = await Actividad.create({
     titulo: datos.titulo,
     descripcion: datos.descripcion,
-    etiquetas: datos.etiquetas,
+    etiquetas: await armarEtiquetas(datos.etiquetas, datos.contactoMenores),
     ubicacion: aPunto(datos.ubicacion),
     direccion: datos.direccion,
     fechaInicio: datos.fechaInicio,
     fechaFin: datos.fechaFin,
-    cupo: datos.cupo,
+    cupo: datos.cupo ?? null, // null = cupos ilimitados
     organizacionId: usuario.organizacionId, // del token, nunca del body
     creadaPor: usuario.id,
   });
@@ -114,15 +153,22 @@ async function actualizar(usuario, id, datos, ctx) {
   if (act.estado !== 'publicada') throw ApiError.conflict('ACTIVIDAD_NO_EDITABLE', 'Solo se pueden editar actividades publicadas');
 
   if (datos.etiquetas) await validarEtiquetas(datos.etiquetas);
+  if (datos.etiquetas !== undefined || datos.contactoMenores !== undefined) {
+    const actuales = act.etiquetas.map(String);
+    const teniaContacto = Boolean(await Etiqueta.exists({ _id: { $in: actuales }, nombre: CONTACTO_MENORES }));
+    act.etiquetas = await armarEtiquetas(datos.etiquetas ?? actuales, datos.contactoMenores ?? teniaContacto);
+  }
   const inicio = datos.fechaInicio || act.fechaInicio;
   const fin = datos.fechaFin || act.fechaFin;
   if (new Date(fin) <= new Date(inicio)) throw ApiError.badRequest('FECHAS_INVALIDAS', 'La fecha de fin debe ser posterior a la de inicio');
-  if (datos.cupo !== undefined && datos.cupo < act.inscriptos) {
+  // cupo null = ilimitado (siempre se puede). Con número, no puede quedar por debajo de los ya inscriptos.
+  if (datos.cupo !== undefined && datos.cupo !== null && datos.cupo < act.inscriptos) {
     throw ApiError.conflict('CUPO_MENOR_A_INSCRIPTOS', `Ya hay ${act.inscriptos} inscriptos; el cupo no puede ser menor`);
   }
 
   // Lista blanca explícita de campos editables (mass assignment).
-  for (const campo of ['titulo', 'descripcion', 'etiquetas', 'direccion', 'fechaInicio', 'fechaFin', 'cupo']) {
+  // (las etiquetas ya se armaron arriba con armarEtiquetas)
+  for (const campo of ['titulo', 'descripcion', 'direccion', 'fechaInicio', 'fechaFin', 'cupo']) {
     if (datos[campo] !== undefined) act[campo] = datos[campo];
   }
   if (datos.ubicacion) act.ubicacion = aPunto(datos.ubicacion);
@@ -143,6 +189,10 @@ async function eliminar(usuario, id, ctx) {
 }
 
 async function listarEtiquetas() {
+  // "Otros" tiene que existir siempre (es donde caen las actividades sin otro tipo); "Animales" es un tipo fijo más.
+  for (const nombre of ['Otros', 'Animales']) {
+    await Etiqueta.updateOne({ nombre }, { $setOnInsert: { nombre, sensible: false, clase: 'tipo' } }, { upsert: true });
+  }
   const etiquetas = await Etiqueta.find().sort({ nombre: 1 }).lean();
   return etiquetas.map(dto.etiqueta);
 }

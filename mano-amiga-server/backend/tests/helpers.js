@@ -89,6 +89,7 @@ function datosActividad(extra = {}) {
     fechaInicio: inicio.toISOString(),
     fechaFin: fin.toISOString(),
     cupo: 20,
+    contactoMenores: false,
     ...extra,
   };
 }

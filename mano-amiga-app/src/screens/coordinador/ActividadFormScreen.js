@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Pantalla from '../../components/Pantalla';
 import FechaHoraInput from '../../components/FechaHoraInput';
-import { Boton, Campo, Cargando, Chip, MensajeError, Subtitulo, Tarjeta, TextoSuave } from '../../components/ui';
+import SelectorUbicacion from '../../components/SelectorUbicacion';
+import { Boton, BotonPastilla, Campo, Cargando, Chip, MensajeError, Subtitulo, Tarjeta, TextoSuave } from '../../components/ui';
 import { useCarga } from '../../hooks/useCarga';
 import { crearActividad, editarActividad, listarEtiquetas, obtenerActividad } from '../../api/actividades';
 import { mensajeDeError } from '../../api/client';
 import { espacio } from '../../constants/tema';
+import { TIPOS, etiquetaEsTipo } from '../../constants/tipos';
 
 /** Alta y edición de actividades (R2). Si llega route.params.id, es edición. */
 export default function ActividadFormScreen({ route, navigation }) {
@@ -20,7 +22,9 @@ export default function ActividadFormScreen({ route, navigation }) {
     lat: '',
     lng: '',
     cupo: '10',
+    ilimitado: false,
     etiquetas: [],
+    contactoMenores: null, // pregunta obligatoria: true / false (null = sin responder)
     fechaInicio: new Date(Date.now() + 86400000),
     fechaFin: new Date(Date.now() + 86400000 + 3 * 3600000),
   });
@@ -38,8 +42,10 @@ export default function ActividadFormScreen({ route, navigation }) {
           direccion: a.direccion,
           lat: String(a.ubicacion.lat),
           lng: String(a.ubicacion.lng),
-          cupo: String(a.cupo),
-          etiquetas: a.etiquetas.map((e) => e.id),
+          cupo: a.cupoIlimitado ? '10' : String(a.cupo),
+          ilimitado: Boolean(a.cupoIlimitado),
+          etiquetas: a.etiquetas.filter(etiquetaEsTipo).slice(0, 1).map((e) => e.id),
+          contactoMenores: Boolean(a.contactoMenores),
           fechaInicio: new Date(a.fechaInicio),
           fechaFin: new Date(a.fechaFin),
         })
@@ -49,17 +55,18 @@ export default function ActividadFormScreen({ route, navigation }) {
   }, [id, navigation]);
 
   const set = (campo) => (valor) => setForm((f) => ({ ...f, [campo]: valor }));
-  const alternarEtiqueta = (eid) =>
-    setForm((f) => ({ ...f, etiquetas: f.etiquetas.includes(eid) ? f.etiquetas.filter((x) => x !== eid) : [...f.etiquetas, eid] }));
+  // Un solo tipo por actividad: elegir otro reemplaza al anterior.
+  const alternarEtiqueta = (eid) => setForm((f) => ({ ...f, etiquetas: f.etiquetas.includes(eid) ? [] : [eid] }));
 
   const guardar = async () => {
     setError(null);
     const lat = parseFloat(form.lat);
     const lng = parseFloat(form.lng);
     const cupo = parseInt(form.cupo, 10);
-    if (Number.isNaN(lat) || Number.isNaN(lng)) return setError('Completá latitud y longitud (copialas de Google Maps)');
-    if (Number.isNaN(cupo) || cupo < 1) return setError('El cupo debe ser un número mayor a 0');
+    if (Number.isNaN(lat) || Number.isNaN(lng)) return setError('Ubicá la actividad en el mapa (buscá la dirección o tocá el lugar).');
+    if (!form.ilimitado && (Number.isNaN(cupo) || cupo < 1)) return setError('El cupo debe ser un número mayor a 0 (o elegí "Sin límite")');
     if (form.fechaFin <= form.fechaInicio) return setError('La fecha de fin debe ser posterior a la de inicio');
+    if (form.contactoMenores === null) return setError('Respondé si hay contacto con menores.');
 
     // La organización NO se manda: la API la toma del token del coordinador.
     const datos = {
@@ -67,8 +74,9 @@ export default function ActividadFormScreen({ route, navigation }) {
       descripcion: form.descripcion.trim(),
       direccion: form.direccion.trim(),
       ubicacion: { lat, lng },
-      cupo,
+      cupo: form.ilimitado ? null : cupo, // null = cupos ilimitados
       etiquetas: form.etiquetas,
+      contactoMenores: form.contactoMenores,
       fechaInicio: form.fechaInicio.toISOString(),
       fechaFin: form.fechaFin.toISOString(),
     };
@@ -88,44 +96,75 @@ export default function ActividadFormScreen({ route, navigation }) {
   return (
     <Pantalla>
       <MensajeError texto={error} />
-      <Subtitulo estilo={{ marginTop: 0 }}>Lo básico</Subtitulo>
       <Tarjeta>
       <Campo etiqueta="Título" value={form.titulo} onChangeText={set('titulo')} maxLength={100} />
       <Campo etiqueta="Descripción (mínimo 10 caracteres)" value={form.descripcion} onChangeText={set('descripcion')} multiline maxLength={2000} />
       <FechaHoraInput etiqueta="Inicio" valor={form.fechaInicio} onChange={set('fechaInicio')} />
       <FechaHoraInput etiqueta="Fin" valor={form.fechaFin} onChange={set('fechaFin')} />
-      <Campo etiqueta="Cupo" value={form.cupo} onChangeText={set('cupo')} keyboardType="number-pad" />
+      <View style={styles.fila}>
+        <View style={styles.mitad}>
+          {form.ilimitado ? (
+            <Campo etiqueta="Cupo" value="Ilimitado" editable={false} />
+          ) : (
+            <Campo etiqueta="Cupo" value={form.cupo} onChangeText={set('cupo')} keyboardType="number-pad" />
+          )}
+        </View>
+        <View style={styles.sinLimite}>
+          <Chip texto="Sin límite" activo={form.ilimitado} onPress={() => setForm((f) => ({ ...f, ilimitado: !f.ilimitado }))} />
+        </View>
+      </View>
       </Tarjeta>
 
       <Subtitulo>Ubicación de la actividad</Subtitulo>
       <Tarjeta>
-      <TextoSuave estilo={{ marginBottom: espacio.s }}>
-        Es una ubicación institucional y pública (RS7). En Google Maps mantené apretado el lugar y copiá los dos números.
-      </TextoSuave>
-      <Campo etiqueta="Dirección" value={form.direccion} onChangeText={set('direccion')} />
-      <View style={styles.fila}>
-        <View style={styles.mitad}>
-          <Campo etiqueta="Latitud" value={form.lat} onChangeText={set('lat')} keyboardType="numbers-and-punctuation" placeholder="-34.91" />
-        </View>
-        <View style={styles.mitad}>
-          <Campo etiqueta="Longitud" value={form.lng} onChangeText={set('lng')} keyboardType="numbers-and-punctuation" placeholder="-56.17" />
-        </View>
-      </View>
+      <SelectorUbicacion valor={form} onChange={(cambios) => setForm((f) => ({ ...f, ...cambios }))} />
       </Tarjeta>
 
-      <Subtitulo>Etiquetas</Subtitulo>
-      <View style={styles.chips}>
-        {(etiquetas.datos || []).map((e) => (
-          <Chip
-            key={e.id}
-            texto={e.sensible ? `${e.nombre} (sensible)` : e.nombre}
-            clave={e.nombre}
-            activo={form.etiquetas.includes(e.id)}
-            onPress={() => alternarEtiqueta(e.id)}
-          />
-        ))}
-      </View>
-      <TextoSuave estilo={{ marginBottom: espacio.m }}>"Sensible" = etiqueta sensible: la actividad no se muestra a voluntarios del programa judicial.</TextoSuave>
+      <Subtitulo>Tipo de actividad</Subtitulo>
+      <TextoSuave estilo={{ marginBottom: espacio.s }}>Elegí uno. Define el color y el ícono de la actividad en la app.</TextoSuave>
+      {(() => {
+        // Los tipos en el orden de la paleta ("Otros" al final), repartidos en dos filas centradas.
+        const orden = Object.keys(TIPOS);
+        const tipos = (etiquetas.datos || [])
+          .filter(etiquetaEsTipo)
+          .sort((a, b) => (orden.indexOf(a.nombre) + 1 || 99) - (orden.indexOf(b.nombre) + 1 || 99));
+        // Los 8 tipos con color en dos columnas (4 filas); "Otros" va abajo a la izquierda, sin color.
+        const otros = tipos.find((e) => e.nombre === 'Otros');
+        const conColor = tipos.filter((e) => e.nombre !== 'Otros');
+        const filas = [];
+        for (let i = 0; i < conColor.length; i += 2) filas.push(conColor.slice(i, i + 2));
+        return (
+          <>
+            {filas.map((fila, i) => (
+              <View key={i} style={styles.chipsFila}>
+                {fila.map((e) => (
+                  <View key={e.id} style={styles.chipCelda}>
+                    <Chip texto={e.nombre} clave={e.nombre} suave estilo={styles.chipLleno} activo={form.etiquetas.includes(e.id)} onPress={() => alternarEtiqueta(e.id)} />
+                  </View>
+                ))}
+                {fila.length === 1 ? <View style={styles.chipCelda} /> : null}
+              </View>
+            ))}
+            {otros ? (
+              <View style={styles.chipsFila}>
+                <View style={styles.chipCelda}>
+                  <Chip texto="Otros" clave="sin-color" estilo={styles.chipLleno} activo={form.etiquetas.includes(otros.id)} onPress={() => alternarEtiqueta(otros.id)} />
+                </View>
+                <View style={styles.chipCelda} />
+              </View>
+            ) : null}
+          </>
+        );
+      })()}
+
+      <Subtitulo>¿Hay contacto con menores?</Subtitulo>
+      <Tarjeta>
+        <View style={styles.respuestas}>
+          <BotonPastilla titulo="Sí" activo={form.contactoMenores === true} onPress={() => setForm((f) => ({ ...f, contactoMenores: true }))} />
+          <BotonPastilla titulo="No" activo={form.contactoMenores === false} onPress={() => setForm((f) => ({ ...f, contactoMenores: false }))} />
+        </View>
+        <TextoSuave estilo={{ marginTop: espacio.s }}>Es obligatorio responder. Si hay contacto con menores, la actividad no se muestra a voluntarios del programa judicial.</TextoSuave>
+      </Tarjeta>
 
       <Boton titulo={id ? 'Guardar cambios' : 'Publicar actividad'}  onPress={guardar} cargando={enviando} />
     </Pantalla>
@@ -135,5 +174,9 @@ export default function ActividadFormScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   fila: { flexDirection: 'row', gap: espacio.s },
   mitad: { flex: 1 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap' },
+  sinLimite: { justifyContent: 'center', paddingTop: 10 },
+  chipsFila: { flexDirection: 'row', gap: espacio.s, marginBottom: espacio.s },
+  chipCelda: { flex: 1 },
+  chipLleno: { marginRight: 0, marginBottom: 0, alignItems: 'center', paddingVertical: 10 },
+  respuestas: { flexDirection: 'row', gap: espacio.s },
 });

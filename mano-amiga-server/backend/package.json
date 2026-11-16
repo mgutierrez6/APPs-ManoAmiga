@@ -12,6 +12,7 @@
     "dev": "nodemon server.js",
     "seed": "node src/scripts/seed.js",
     "seed:demo": "node src/scripts/seed-demo.js",
+    "migrar:sprint4": "node src/scripts/migrar-sprint4.js",
     "test": "jest --runInBand",
     "audit": "npm audit --omit=dev"
   },

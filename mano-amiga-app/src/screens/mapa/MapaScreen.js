@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MensajeError } from '../../components/ui';
 import { useTema } from '../../hooks/useTema';
 import { colores, espacio, estilosDinamicos, fuentes, sombra } from '../../constants/tema';
-import { FichaPunto, FiltrosMapa, REGION_INICIAL, colorPunto, usePuntos } from './comun';
+import { FichaPunto, FiltrosMapa, REGION_INICIAL, colorPunto, iconoPunto, usePuntos } from './comun';
 import Icono from '../../components/Icono';
 
 /*
@@ -108,7 +108,7 @@ function Marcador({ punto, activo, onPress }) {
     >
       <View style={styles.marcador}>
         <View style={[styles.burbuja, { backgroundColor: colorPunto(punto) }, activo && styles.burbujaActiva]}>
-          <Icono nombre={punto.tipo === 'acopio' ? 'campanas' : 'actividades'} color={colores.blanco} tamano={18} grosor={2.2} />
+          <Icono nombre={iconoPunto(punto)} color={colores.tintaFija} tamano={18} grosor={2.2} />
         </View>
         <View style={[styles.pico, { borderTopColor: colorPunto(punto) }]} />
       </View>
@@ -135,27 +135,27 @@ const styles = estilosDinamicos(() => ({
     marginLeft: espacio.l,
     marginBottom: espacio.s,
     fontFamily: fuentes.titulo,
-    fontSize: 20,
+    fontSize: 24,
     color: colores.tinta,
     backgroundColor: colores.tarjeta,
     paddingHorizontal: 14,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: 12,
     overflow: 'hidden',
   },
   avisos: { paddingHorizontal: espacio.l },
-  aviso: { fontFamily: fuentes.textoMedio, color: colores.tinta, backgroundColor: colores.solSuave, padding: 10, borderRadius: 14, overflow: 'hidden' },
+  aviso: { fontFamily: fuentes.textoMedio, color: colores.tinta, backgroundColor: colores.solSuave, padding: 10, borderRadius: 12, overflow: 'hidden' },
   botonUbicacion: {
     position: 'absolute',
     right: espacio.l,
     width: 54,
     height: 54,
-    borderRadius: 27,
+    borderRadius: 14,
     backgroundColor: colores.tarjeta,
     alignItems: 'center',
     justifyContent: 'center',
-    ...sombra,
-    shadowOpacity: 0.2,
+    borderWidth: 1,
+    borderColor: colores.borde,
   },
   botonUbicacionTexto: { fontSize: 24 },
   abajo: { position: 'absolute', left: espacio.l, right: espacio.l, bottom: espacio.l },

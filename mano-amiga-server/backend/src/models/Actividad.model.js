@@ -20,7 +20,7 @@ const actividadSchema = new Schema(
     direccion: { type: String, trim: true, maxlength: 200 },
     fechaInicio: { type: Date, required: true },
     fechaFin: { type: Date, required: true },
-    cupo: { type: Number, required: true, min: 1 },
+    cupo: { type: Number, min: 1, default: null }, // null = cupos ilimitados
     inscriptos: { type: Number, default: 0, min: 0 }, // contador para reservar cupo de forma atómica
     estado: { type: String, enum: ['publicada', 'cancelada', 'finalizada'], default: 'publicada' },
   },

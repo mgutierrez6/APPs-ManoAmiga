@@ -82,7 +82,7 @@ describe('ABAC en el mapa', () => {
 describe('RS7 · solo ubicaciones institucionales', () => {
   test('ningún punto trae datos de personas', async () => {
     const res = await puntos('', s.vol1);
-    const permitidos = ['id', 'tipo', 'titulo', 'organizacion', 'etiquetas', 'ubicacion', 'direccion', 'fechaInicio', 'fechaFin', 'cuposLibres', 'campana', 'campanaId'];
+    const permitidos = ['id', 'tipo', 'titulo', 'organizacion', 'etiquetas', 'ubicacion', 'direccion', 'fechaInicio', 'fechaFin', 'cuposLibres', 'cupoIlimitado', 'tipoActividad', 'campana', 'campanaId'];
     for (const p of res.body.data) {
       expect(Object.keys(p).every((k) => permitidos.includes(k))).toBe(true);
     }

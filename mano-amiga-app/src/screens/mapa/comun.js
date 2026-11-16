@@ -8,6 +8,7 @@ import { listarEtiquetas } from '../../api/actividades';
 import { listarCampanas } from '../../api/comunidad';
 import { colores, espacio, estilosDinamicos, fuentes, sombra } from '../../constants/tema';
 import { rangoFechas, fechaHora } from '../../utils/formato';
+import { estiloTipo, etiquetaEsTipo } from '../../constants/tipos';
 
 export const FILTROS = [
   { valor: 'todos', texto: 'Todo' },
@@ -18,8 +19,9 @@ export const FILTROS = [
 // Centro por defecto: Montevideo.
 export const REGION_INICIAL = { latitude: -34.8941, longitude: -56.1525, latitudeDelta: 0.16, longitudeDelta: 0.16 };
 
-export const iconoPunto = (p) => (p.tipo === 'acopio' ? 'campanas' : 'actividades');
-export const colorPunto = (p) => (p.tipo === 'acopio' ? colores.menta : colores.coral);
+// Actividades: color e ícono de su TIPO (los mismos que en el resto de la app). Acopio: lima con un corazón.
+export const iconoPunto = (p) => (p.tipo === 'acopio' ? 'corazon' : estiloTipo(p.tipoActividad).esTipo ? estiloTipo(p.tipoActividad).icono : 'estrella');
+export const colorPunto = (p) => (p.tipo === 'acopio' ? colores.menta : estiloTipo(p.tipoActividad).esTipo ? estiloTipo(p.tipoActividad).color : colores.coral);
 
 /* Carga los puntos con los filtros elegidos (R5: tipo, etiqueta y campaña).
  Los datos de la persona NO viajan al servidor (RS7): ni su ubicación ni nada suyo.
@@ -56,7 +58,7 @@ export function FiltrosMapa({ tipo, setTipo, etiqueta, setEtiqueta, campana, set
   // Tocar un chip ya elegido lo desmarca.
   const opciones =
     tipo === 'actividad'
-      ? (etiquetas.datos || []).map((e) => ({ id: e.id, texto: e.nombre, activo: etiqueta === e.id, elegir: () => setEtiqueta(etiqueta === e.id ? null : e.id) }))
+      ? (etiquetas.datos || []).filter(etiquetaEsTipo).map((e) => ({ id: e.id, texto: e.nombre, activo: etiqueta === e.id, elegir: () => setEtiqueta(etiqueta === e.id ? null : e.id) }))
       : tipo === 'acopio'
         ? (campanas.datos?.data || []).map((c) => ({ id: c.id, texto: c.titulo, activo: campana === c.id, elegir: () => setCampana(campana === c.id ? null : c.id) }))
         : [];
@@ -84,8 +86,8 @@ export function FichaPunto({ punto, onVerActividad, onCerrar }) {
   return (
     <View style={styles.ficha}>
       <View style={styles.fichaFila}>
-        <View style={[styles.fichaIcono, { backgroundColor: esActividad ? colores.coralSuave : colores.mentaSuave }]}>
-          <Icono nombre={iconoPunto(punto)} color={esActividad ? colores.coralTexto : colores.mentaTexto} tamano={24} />
+        <View style={[styles.fichaIcono, { backgroundColor: colorPunto(punto) }]}>
+          <Icono nombre={iconoPunto(punto)} color={colores.tintaFija} tamano={24} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.fichaTitulo} numberOfLines={2}>
@@ -101,7 +103,7 @@ export function FichaPunto({ punto, onVerActividad, onCerrar }) {
       </View>
       {punto.direccion ? <TextoSuave>{punto.direccion}</TextoSuave> : null}
       <TextoSuave>{esActividad ? `${rangoFechas(punto.fechaInicio, punto.fechaFin)}` : `Recibe donaciones hasta el ${fechaHora(punto.fechaFin)}`}</TextoSuave>
-      {esActividad ? <TextoSuave>{punto.cuposLibres > 0 ? `${punto.cuposLibres} cupos libres` : 'Sin cupos libres'}</TextoSuave> : null}
+      {esActividad ? <TextoSuave>{punto.cupoIlimitado || punto.cuposLibres == null ? 'Cupos ilimitados' : punto.cuposLibres > 0 ? `${punto.cuposLibres} cupos libres` : 'Sin cupos libres'}</TextoSuave> : null}
       <View style={styles.botones}>
         {esActividad && onVerActividad ? <Boton titulo="Ver actividad" chico onPress={() => onVerActividad(punto)} estilo={{ flex: 1 }} /> : null}
         <Boton titulo="Cómo llegar" chico variante="borde" onPress={() => abrirComoLlegar(punto)} estilo={{ flex: 1 }} />
@@ -112,10 +114,10 @@ export function FichaPunto({ punto, onVerActividad, onCerrar }) {
 
 const styles = estilosDinamicos(() => ({
   filtros: { paddingHorizontal: espacio.l, paddingTop: 2 },
-  ficha: { backgroundColor: colores.tarjeta, borderRadius: 26, padding: espacio.l, ...sombra, shadowOpacity: 0.18, gap: 4 },
+  ficha: { backgroundColor: colores.tarjeta, borderRadius: 26, padding: espacio.l, borderWidth: 1, borderColor: colores.borde, gap: 4 },
   fichaFila: { flexDirection: 'row', alignItems: 'center', gap: espacio.m, marginBottom: 6 },
-  fichaIcono: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  fichaTitulo: { fontFamily: fuentes.tituloMedio, fontSize: 18, color: colores.tinta },
+  fichaIcono: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  fichaTitulo: { fontFamily: fuentes.tituloMedio, fontSize: 17, color: colores.tinta },
   cerrar: { fontFamily: fuentes.negrita, fontSize: 18, color: colores.gris, padding: 6 },
   botones: { flexDirection: 'row', gap: espacio.s, marginTop: espacio.s },
 }));
