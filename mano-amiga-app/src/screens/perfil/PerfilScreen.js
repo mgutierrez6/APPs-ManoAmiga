@@ -1,39 +1,44 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Aparecer, Avatar, BarraProgreso, Boton, Cargando, MensajeError, Subtitulo, Tarjeta, TextoSuave } from '../../components/ui';
+import Icono from '../../components/Icono';
+import { Aparecer, Avatar, BarraProgreso, Cargando, MensajeError, Segmentos } from '../../components/ui';
 import { useCarga } from '../../hooks/useCarga';
 import { useAuth } from '../../hooks/useAuth';
 import { useTema } from '../../hooks/useTema';
 import { actualizarPerfil, misHoras, obtenerPerfil } from '../../api/usuarios';
+import { misHistorias } from '../../api/historias';
+import { perfilOrganizacion } from '../../api/organizaciones';
 import { mensajeDeError } from '../../api/client';
-import { colores, espacio, estilosDinamicos, fuentes } from '../../constants/tema';
-
-const ROLES = {
-  voluntario: { texto: 'Voluntario/a' },
-  coordinador: { texto: 'Coordinador/a' },
-  admin: { texto: 'Administrador/a' },
-};
+import { elegirYSubir } from '../../utils/fotos';
+import { colores, espacio, estilosDinamicos, fuentes, paletas, tituloGrande } from '../../constants/tema';
 
 const TEMAS = [
-  { valor: 'sistema', texto: 'Automático' },
   { valor: 'claro', texto: 'Claro' },
   { valor: 'oscuro', texto: 'Oscuro' },
+  { valor: 'sistema', texto: 'Sistema' },
 ];
 
 /**
- * Perfil (R8 / R16): datos de contacto, tema, contraseña, historial de accesos y horas judiciales.
- * Todo lo que se muestra es del propio usuario: la API usa el id del token, nunca uno de la URL (RS2).
+ * Perfil (R8 / R16). Todo es del propio usuario: la API usa el id del token, nunca uno de la URL (RS2).
+ *  - Voluntario judicial: sus horas del programa (las horas solo le importan a él/ella).
+ *  - Voluntario común: la carpeta "Mi historia".
+ *  - Coordinador: acceso al perfil de su organización.
  */
 export default function PerfilScreen({ navigation }) {
   const { logout, actualizarUsuario } = useAuth();
   const { preferencia, setPreferenciaLocal, limpiarPreferenciaLocal } = useTema();
   const insets = useSafeAreaInsets();
   const [errorTema, setErrorTema] = useState(null);
-  const { datos, cargando, error, recargar } = useCarga(async () => {
+  const [subiendoFoto, setSubiendoFoto] = useState(false);
+  const { datos, setDatos, cargando, error, recargar } = useCarga(async () => {
     const perfil = await obtenerPerfil();
-    const horas = perfil.esJudicial ? await misHoras() : null;
-    return { perfil, horas };
+    const [horas, historias, org] = await Promise.all([
+      perfil.esJudicial ? misHoras() : null,
+      perfil.rol === 'voluntario' && !perfil.esJudicial ? misHistorias().catch(() => []) : null,
+      perfil.rol === 'coordinador' && perfil.organizacionId ? perfilOrganizacion(perfil.organizacionId).catch(() => null) : null,
+    ]);
+    return { perfil, horas, historias, org };
   }, []);
 
   // El tema se aplica al instante y después se guarda en el servidor (queda en el perfil).
@@ -51,144 +56,172 @@ export default function PerfilScreen({ navigation }) {
     }
   };
 
+  const cambiarFoto = async () => {
+    setSubiendoFoto(true);
+    try {
+      const [foto] = await elegirYSubir('perfil');
+      if (foto) {
+        const p = await actualizarPerfil({ fotoId: foto.id });
+        setDatos((d) => ({ ...d, perfil: p }));
+      }
+    } catch (e) {
+      Alert.alert('No se pudo cambiar la foto', mensajeDeError(e));
+    } finally {
+      setSubiendoFoto(false);
+    }
+  };
+
   if (cargando && !datos) return <Cargando />;
   const p = datos?.perfil;
-  const rol = ROLES[p?.rol] || ROLES.voluntario;
+  const rolTexto = p?.rol === 'coordinador' ? `Coordinador/a${datos?.org ? ` · ${datos.org.nombre}` : ''}` : p?.rol === 'admin' ? 'Administrador/a' : p?.esJudicial ? 'Voluntario/a · programa judicial' : 'Voluntario/a';
+  const cantHistorias = datos?.historias?.length || 0;
 
   return (
-    <ScrollView style={styles.contenedor} contentContainerStyle={styles.contenido}>
-      <View style={[styles.hero, { paddingTop: insets.top + espacio.xl }]}>
-        {p ? (
-          <View style={styles.heroCentro}>
-            <View style={styles.avatarAro}>
-              <Avatar nombre={p.nombre} apellido={p.apellido} tamano={92} />
-            </View>
-            <Text style={styles.nombre}>
-              {p.nombre} {p.apellido}
-            </Text>
-            <View style={styles.rol}>
-              <Text style={styles.rolTexto}>
-                {rol.texto}
+    <ScrollView style={styles.contenedor} contentContainerStyle={{ paddingTop: insets.top + espacio.xl, paddingBottom: espacio.xxl, paddingHorizontal: espacio.xl }}>
+      <MensajeError texto={error} onReintentar={recargar} />
+      {p ? (
+        <>
+          <View style={styles.cabecera}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Cambiar foto de perfil" onPress={cambiarFoto} disabled={subiendoFoto}>
+              <Avatar nombre={p.nombre} apellido={p.apellido} tamano={76} foto={p.foto} />
+              <View style={styles.mas}>
+                <Text style={styles.masTexto}>{subiendoFoto ? '…' : '+'}</Text>
+              </View>
+            </Pressable>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.nombre}>
+                {p.nombre}
+                {'\n'}
+                {p.apellido}
+              </Text>
+              <Text style={styles.rol} numberOfLines={2}>
+                {rolTexto}
               </Text>
             </View>
           </View>
-        ) : null}
-      </View>
 
-      <View style={styles.cuerpo}>
-        <MensajeError texto={error} onReintentar={recargar} />
-        {p ? (
-          <>
+          {datos.horas ? (
             <Aparecer>
-              <Tarjeta>
-                <Fila etiqueta="Email" valor={p.email} />
-                <Fila etiqueta="Teléfono" valor={p.telefono || 'Sin teléfono'} />
-                <Boton titulo="Editar mis datos" variante="borde" chico onPress={() => navigation.navigate('EditarPerfil', { perfil: p })} estilo={{ marginTop: espacio.s }} />
-              </Tarjeta>
-            </Aparecer>
-
-            {datos.horas ? (
-              <Aparecer indice={1}>
-                <Subtitulo>Horas de trabajo comunitario</Subtitulo>
-                <Tarjeta>
-                  <View style={styles.horasCabecera}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.horasGrande}>
-                        {datos.horas.horasCumplidas} <Text style={styles.horasDe}>de {datos.horas.horasAsignadas} h</Text>
-                      </Text>
-                      <TextoSuave>
-                        {datos.horas.horasRestantes > 0 ? `¡Te faltan ${datos.horas.horasRestantes} horas!` : '¡Completaste tus horas!'}
-                      </TextoSuave>
-                    </View>
-                  </View>
-                  <BarraProgreso valor={datos.horas.horasCumplidas} total={datos.horas.horasAsignadas || 1} color={colores.lila} />
-                  <TextoSuave estilo={{ marginTop: 10 }}>Solo cuentan las asistencias validadas por un coordinador.</TextoSuave>
-                </Tarjeta>
-              </Aparecer>
-            ) : null}
-
-            <Aparecer indice={2}>
-              <Subtitulo>Apariencia</Subtitulo>
-              <View style={styles.temas}>
-                {TEMAS.map((t) => {
-                  const activo = preferencia === t.valor;
-                  return (
-                    <Pressable
-                      key={t.valor}
-                      accessibilityRole="radio"
-                      accessibilityState={{ selected: activo }}
-                      onPress={() => elegirTema(t.valor)}
-                      style={({ pressed }) => [styles.tema, activo && styles.temaActivo, pressed && { transform: [{ scale: 0.96 }] }]}
-                    >
-                      <Text style={[styles.temaTexto, activo && styles.temaTextoActivo]}>{t.texto}</Text>
-                    </Pressable>
-                  );
-                })}
+              <View style={styles.judicial}>
+                <View style={styles.judicialFila}>
+                  <Text style={styles.judicialEtiqueta}>Programa judicial</Text>
+                  <Text style={styles.judicialEtiqueta}>
+                    {datos.horas.horasRestantes > 0 ? `te faltan ${datos.horas.horasRestantes} h` : '¡completaste tus horas!'}
+                  </Text>
+                </View>
+                <Text style={styles.judicialNumero}>
+                  {datos.horas.horasCumplidas}
+                  <Text style={styles.judicialDe}> / {datos.horas.horasAsignadas} h</Text>
+                </Text>
+                <BarraProgreso valor={datos.horas.horasCumplidas} total={datos.horas.horasAsignadas || 1} color={colores.sol} fondo="rgba(255,255,255,0.35)" />
+                <Text style={styles.judicialNota}>Solo cuentan las asistencias validadas por un coordinador.</Text>
               </View>
-              <MensajeError texto={errorTema} />
             </Aparecer>
+          ) : null}
 
-            <Aparecer indice={3}>
-              <Subtitulo>Seguridad</Subtitulo>
-              <Tarjeta onPress={() => navigation.navigate('CambiarPassword')} acento={colores.coral}>
-                <Opcion titulo="Cambiar contraseña" texto="Se cierran las sesiones en tus otros dispositivos." />
-              </Tarjeta>
-              <Tarjeta onPress={() => navigation.navigate('Accesos')} acento={colores.oceano}>
-                <Opcion titulo="Historial de accesos" texto="Revisá cuándo y desde dónde se usó tu cuenta." />
-              </Tarjeta>
+          {p.rol === 'voluntario' && !p.esJudicial ? (
+            <Aparecer>
+              <Pressable accessibilityRole="button" accessibilityLabel="Abrir Mi historia" onPress={() => navigation.navigate('MiHistoria')} style={styles.carpeta}>
+                <View style={styles.carpetaPestana} />
+                <View style={styles.carpetaFondo} />
+                <View style={[styles.carpetaHoja, { backgroundColor: '#B7D665', left: 150, right: 56, top: 26, transform: [{ rotate: '-7deg' }] }]} />
+                <View style={[styles.carpetaHoja, { backgroundColor: '#407ADD', left: 176, right: 30, top: 22, transform: [{ rotate: '5deg' }] }]} />
+                <View style={[styles.carpetaHoja, { backgroundColor: '#E763A5', left: 196, right: 14, top: 34, transform: [{ rotate: '-2deg' }] }]} />
+                <View style={styles.carpetaFrente}>
+                  <View>
+                    <Text style={styles.carpetaTitulo}>Mi historia</Text>
+                    <Text style={styles.carpetaTexto}>
+                      {cantHistorias} {cantHistorias === 1 ? 'actividad' : 'actividades'}
+                    </Text>
+                  </View>
+                  <View style={styles.carpetaFlecha}>
+                    <Icono nombre="derecha" color={paletas.claro.tinta} tamano={18} grosor={2.2} />
+                  </View>
+                </View>
+              </Pressable>
             </Aparecer>
-          </>
-        ) : null}
-        <Boton titulo="Cerrar sesión" variante="borde" onPress={logout} estilo={{ marginTop: espacio.m }} />
-      </View>
+          ) : null}
+
+          {p.rol === 'coordinador' && datos.org ? (
+            <Aparecer>
+              <Pressable accessibilityRole="button" onPress={() => navigation.navigate('MiOrganizacion')} style={styles.org}>
+                <View style={styles.orgLogo}>
+                  <Icono nombre="organizaciones" color="#FFFFFF" tamano={24} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.orgEtiqueta}>Tu organización</Text>
+                  <Text style={styles.orgNombre} numberOfLines={1}>
+                    {datos.org.nombre}
+                  </Text>
+                </View>
+                <Text style={styles.orgVer}>Ver perfil →</Text>
+              </Pressable>
+            </Aparecer>
+          ) : null}
+
+          <View style={styles.menu}>
+            <Fila titulo="Mis datos" onPress={() => navigation.navigate('EditarPerfil', { perfil: p })} />
+            <Fila titulo="Cambiar contraseña" onPress={() => navigation.navigate('CambiarPassword')} />
+            <Fila titulo="Historial de accesos" onPress={() => navigation.navigate('Accesos')} />
+            <View style={styles.temaFila}>
+              <Text style={styles.filaTexto}>Tema</Text>
+              <Segmentos opciones={TEMAS} valor={preferencia} onChange={elegirTema} estilo={styles.temaSegmentos} />
+            </View>
+          </View>
+          <MensajeError texto={errorTema} />
+        </>
+      ) : null}
+      <Pressable accessibilityRole="button" onPress={logout} style={styles.salir}>
+        <Text style={styles.salirTexto}>Cerrar sesión</Text>
+      </Pressable>
     </ScrollView>
   );
 }
 
-function Fila({ etiqueta, valor }) {
+function Fila({ titulo, onPress }) {
   return (
-    <View style={styles.fila}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.filaEtiqueta}>{etiqueta}</Text>
-        <Text style={styles.filaValor}>{valor}</Text>
-      </View>
-    </View>
-  );
-}
-
-function Opcion({ titulo, texto }) {
-  return (
-    <View style={styles.fila}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.opcionTitulo}>{titulo}</Text>
-        <TextoSuave>{texto}</TextoSuave>
-      </View>
-      <Text style={styles.flecha}>›</Text>
-    </View>
+    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.fila, pressed && { opacity: 0.6 }]}>
+      <Text style={styles.filaTexto}>{titulo}</Text>
+      <Icono nombre="derecha" color={colores.tintaSuave} tamano={18} />
+    </Pressable>
   );
 }
 
 const styles = estilosDinamicos(() => ({
   contenedor: { flex: 1, backgroundColor: colores.crema },
-  contenido: { paddingBottom: espacio.xxl },
-  hero: { paddingBottom: espacio.xl, borderBottomLeftRadius: 28, borderBottomRightRadius: 28, backgroundColor: colores.lila },
-  heroCentro: { alignItems: 'center' },
-  avatarAro: { padding: 4, borderRadius: 60, backgroundColor: colores.tarjeta },
-  nombre: { fontFamily: fuentes.titulo, fontSize: 26, color: colores.blanco, marginTop: espacio.m },
-  rol: { backgroundColor: colores.tarjeta, paddingHorizontal: 14, paddingVertical: 5, borderRadius: 999, marginTop: 6 },
-  rolTexto: { fontFamily: fuentes.negrita, color: colores.lilaTexto },
-  cuerpo: { padding: espacio.l },
-  fila: { flexDirection: 'row', alignItems: 'center', gap: espacio.m, paddingVertical: 8 },
-  filaEtiqueta: { fontFamily: fuentes.negrita, fontSize: 12, color: colores.gris },
-  filaValor: { fontFamily: fuentes.textoMedio, fontSize: 15, color: colores.tinta },
-  opcionTitulo: { fontFamily: fuentes.tituloMedio, fontSize: 16, color: colores.tinta },
-  flecha: { fontFamily: fuentes.titulo, fontSize: 26, color: colores.gris },
-  horasCabecera: { flexDirection: 'row', alignItems: 'center', gap: espacio.m, marginBottom: espacio.m },
-  horasGrande: { fontFamily: fuentes.titulo, fontSize: 30, color: colores.lila },
-  horasDe: { fontFamily: fuentes.textoMedio, fontSize: 16, color: colores.tintaSuave },
-  temas: { flexDirection: 'row', gap: espacio.s, marginBottom: espacio.s },
-  tema: { flex: 1, alignItems: 'center', paddingVertical: espacio.m, borderRadius: 16, backgroundColor: colores.tarjeta, borderWidth: 1.5, borderColor: colores.borde },
-  temaActivo: { backgroundColor: colores.lilaSuave, borderColor: colores.lila },
-  temaTexto: { fontFamily: fuentes.textoMedio, color: colores.tintaSuave },
-  temaTextoActivo: { fontFamily: fuentes.negrita, color: colores.tinta },
+  cabecera: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  mas: { position: 'absolute', right: -2, bottom: -2, width: 28, height: 28, borderRadius: 14, backgroundColor: colores.tinta, borderWidth: 3, borderColor: colores.crema, alignItems: 'center', justifyContent: 'center' },
+  masTexto: { fontFamily: fuentes.negrita, fontSize: 16, lineHeight: 18, color: colores.crema },
+  nombre: { ...tituloGrande(32), color: colores.tinta },
+  rol: { fontFamily: fuentes.texto, fontSize: 13, color: colores.tintaSuave, marginTop: 6 },
+
+  judicial: { marginTop: espacio.xl, backgroundColor: colores.coral, borderRadius: 28, padding: 20, gap: 10 },
+  judicialFila: { flexDirection: 'row', justifyContent: 'space-between' },
+  judicialEtiqueta: { fontFamily: fuentes.negrita, fontSize: 13, color: '#FFFFFF' },
+  judicialNumero: { fontFamily: fuentes.numero, fontSize: 52, lineHeight: 56, letterSpacing: -2, color: '#FFFFFF' },
+  judicialDe: { fontSize: 22, letterSpacing: 0 },
+  judicialNota: { fontFamily: fuentes.texto, fontSize: 12, color: '#FFFFFF', opacity: 0.9 },
+
+  carpeta: { marginTop: espacio.xl, height: 150 },
+  carpetaPestana: { position: 'absolute', left: 0, top: 0, width: 120, height: 30, borderTopLeftRadius: 16, borderTopRightRadius: 16, backgroundColor: paletas.claro.tinta },
+  carpetaFondo: { position: 'absolute', left: 0, right: 0, top: 14, bottom: 0, borderRadius: 24, borderTopLeftRadius: 0, backgroundColor: paletas.claro.tinta },
+  carpetaHoja: { position: 'absolute', height: 60, borderRadius: 14 },
+  carpetaFrente: { position: 'absolute', left: 0, right: 0, top: 58, bottom: 0, borderRadius: 22, backgroundColor: '#F9C386', paddingHorizontal: 18, paddingVertical: 14, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
+  carpetaTitulo: { ...tituloGrande(30), color: paletas.claro.tinta },
+  carpetaTexto: { fontFamily: fuentes.texto, fontSize: 13, color: paletas.claro.tinta, marginTop: 4 },
+  carpetaFlecha: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+
+  org: { marginTop: espacio.xl, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colores.tarjeta, borderRadius: 24, padding: 14 },
+  orgLogo: { width: 52, height: 52, borderRadius: 17, backgroundColor: colores.coral, alignItems: 'center', justifyContent: 'center' },
+  orgEtiqueta: { fontFamily: fuentes.texto, fontSize: 12, color: colores.tintaSuave },
+  orgNombre: { fontFamily: fuentes.negrita, fontSize: 15, color: colores.tinta },
+  orgVer: { fontFamily: fuentes.negrita, fontSize: 13, color: colores.coral },
+
+  menu: { marginTop: espacio.l, backgroundColor: colores.tarjeta, borderRadius: 24, paddingHorizontal: 18, paddingVertical: 4 },
+  fila: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: colores.linea },
+  filaTexto: { fontFamily: fuentes.negrita, fontSize: 15, color: colores.tinta },
+  temaFila: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, gap: 12 },
+  temaSegmentos: { flex: 1, maxWidth: 230 },
+  salir: { alignSelf: 'center', padding: 14, marginTop: espacio.m },
+  salirTexto: { fontFamily: fuentes.negrita, fontSize: 14, color: colores.coral },
 }));

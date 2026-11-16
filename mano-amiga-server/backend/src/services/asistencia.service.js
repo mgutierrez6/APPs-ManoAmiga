@@ -7,7 +7,8 @@ const qr = require('./qr.service');
 const notificaciones = require('./notificacion.service');
 const dto = require('./dto');
 
-// Ventana en la que se puede generar/escanear el QR: desde 2 h antes del inicio hasta 2 h después del fin.
+// Ventana en la que se puede generar/escanear el QR: desde 1 h antes del inicio hasta 2 h después del fin.
+const MARGEN_ANTES_MS = 1 * 60 * 60 * 1000;
 const MARGEN_MS = 2 * 60 * 60 * 1000;
 const redondear = (n) => Math.round(n * 100) / 100;
 
@@ -28,7 +29,7 @@ async function actividadDeMiOrg(usuario, actividadId, ctx) {
 
 function assertEnHorario(act) {
   const ahora = Date.now();
-  if (ahora < new Date(act.fechaInicio).getTime() - MARGEN_MS || ahora > new Date(act.fechaFin).getTime() + MARGEN_MS) {
+  if (ahora < new Date(act.fechaInicio).getTime() - MARGEN_ANTES_MS || ahora > new Date(act.fechaFin).getTime() + MARGEN_MS) {
     throw ApiError.conflict('FUERA_DE_HORARIO', 'El registro de asistencia solo está disponible cerca del horario de la actividad');
   }
 }
@@ -143,7 +144,10 @@ async function validar(usuario, asistenciaId, ctx) {
   await asis.save();
 
   await auditoria.registrar({ usuarioId: usuario.id, accion: 'asistencia_validar', recurso: 'asistencia', recursoId: asis._id, resultado: 'ok', ip: ctx.ip, detalle: `${horas} h` });
-  notificaciones.notificar(asis.voluntarioId, 'Asistencia validada', `Se validaron ${horas} horas en "${act.titulo}"`, { asistenciaId: String(asis._id) });
+  // Las horas solo le importan al voluntariado judicial: al resto no se le mencionan.
+  const voluntario = await Usuario.findById(asis.voluntarioId).select('esJudicial').lean();
+  const cuerpo = voluntario && voluntario.esJudicial ? `Se validaron ${horas} horas en "${act.titulo}"` : `Se validó tu asistencia en "${act.titulo}"`;
+  notificaciones.notificar(asis.voluntarioId, 'Asistencia validada', cuerpo, { asistenciaId: String(asis._id) });
   return dto.asistencia(asis);
 }
 

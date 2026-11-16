@@ -7,10 +7,11 @@ const notificaciones = require('./notificacion.service');
 const { Usuario } = require('../models');
 const dto = require('./dto');
 
-/** Reserva atómica del cupo (2.2): evita que dos personas tomen el último lugar. */
+/** Reserva atómica del cupo (2.2): evita que dos personas tomen el último lugar.
+ Con cupo ilimitado (cupo null) siempre hay lugar, pero igual se cuenta el inscripto. */
 async function reservarCupo(actividadId) {
   const act = await Actividad.findOneAndUpdate(
-    { _id: actividadId, estado: 'publicada', $expr: { $lt: ['$inscriptos', '$cupo'] } },
+    { _id: actividadId, estado: 'publicada', $or: [{ cupo: null }, { $expr: { $lt: ['$inscriptos', '$cupo'] } }] },
     { $inc: { inscriptos: 1 } },
     { returnDocument: 'after' }
   );
@@ -69,14 +70,29 @@ async function inscribir(usuario, actividadId, ctx) {
 
 /** GET /usuarios/me/inscripciones — el id sale del token (RS2). */
 async function misInscripciones(usuario, q) {
-  const filtro = { voluntarioId: usuario.id };
+  // Si la organización canceló la actividad, deja de aparecerle al voluntario (siempre).
+  const ocultas = await Actividad.find({ estado: 'cancelada' }).distinct('_id');
+  const filtro = { voluntarioId: usuario.id, ...(ocultas.length ? { actividadId: { $nin: ocultas } } : {}) };
   if (q.estado) filtro.estado = q.estado;
   const res = await paginar(
-    Inscripcion.find(filtro).sort({ fecha: -1 }).populate({ path: 'actividadId', select: 'titulo fechaInicio fechaFin direccion estado' }).lean(),
+    Inscripcion.find(filtro)
+      .sort({ fecha: -1 })
+      .populate({
+        path: 'actividadId',
+        select: 'titulo fechaInicio fechaFin direccion estado etiquetas organizacionId',
+        populate: [
+          { path: 'etiquetas', select: 'nombre clase' },
+          { path: 'organizacionId', select: 'nombre' },
+        ],
+      })
+      .lean(),
     Inscripcion.countDocuments(filtro),
     q
   );
-  return { ...res, data: res.data.map(dto.inscripcionPropia) };
+  // Estado de la asistencia de cada inscripción (así la app no ofrece escanear el QR dos veces).
+  const asistencias = await Asistencia.find({ inscripcionId: { $in: res.data.map((i) => i._id) } }).select('inscripcionId estado').lean();
+  const porInscripcion = new Map(asistencias.map((a) => [String(a.inscripcionId), a.estado]));
+  return { ...res, data: res.data.map((i) => ({ ...dto.inscripcionPropia(i), asistencia: porInscripcion.get(String(i._id)) || null })) };
 }
 
 /** DELETE /inscripciones/:id — solo el titular (RS2, A1). */
