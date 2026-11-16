@@ -37,7 +37,7 @@ describe('Campañas y feed (R6)', () => {
 
   test('feed: el coordinador publica en su proyecto; otro coordinador no puede', async () => {
     const act = await crearActividad(s.coordA);
-    const ok = await request(app).post(`/api/v1/proyectos/${act.id}/publicaciones`).set(bearer(s.coordA)).send({ tipo: 'convocatoria', contenido: '¡Necesitamos 3 personas más!' });
+    const ok = await request(app).post(`/api/v1/proyectos/${act.id}/publicaciones`).set(bearer(s.coordA)).send({ contenido: '¡Necesitamos 3 personas más!' });
     expect(ok.status).toBe(201);
     const no = await request(app).post(`/api/v1/proyectos/${act.id}/publicaciones`).set(bearer(s.coordB)).send({ contenido: 'spam' });
     expect(no.status).toBe(403);

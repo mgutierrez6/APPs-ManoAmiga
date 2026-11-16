@@ -71,7 +71,7 @@ const styles = estilosDinamicos(() => ({
   titulo: { fontFamily: fuentes.titulo, fontSize: 24, textAlign: 'center', color: colores.tinta },
   marcoExterior: { width: 330, height: 330, alignItems: 'center', justifyContent: 'center', marginVertical: espacio.m },
   anillo: { position: 'absolute', width: 318, height: 318, borderRadius: 159, borderWidth: 3, borderColor: colores.coralSuave },
-  qr: { padding: espacio.l, backgroundColor: colores.blanco, borderRadius: 32, borderWidth: 1, borderColor: colores.borde, ...sombra },
+  qr: { padding: espacio.l, backgroundColor: colores.blanco, borderRadius: 20, borderWidth: 1, borderColor: colores.borde, ...sombra },
   contador: { alignSelf: 'stretch', marginBottom: espacio.m },
   contadorTexto: { fontFamily: fuentes.negrita, color: colores.tinta, textAlign: 'center', marginBottom: 8 },
   centrado: { textAlign: 'center', marginTop: espacio.s },

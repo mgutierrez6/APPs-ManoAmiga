@@ -27,8 +27,8 @@ const listarPublicaciones = { params: idParam, query: Joi.object({ ...paginacion
 const crearPublicacion = {
   params: idParam,
   body: Joi.object({
-    tipo: Joi.string().valid('post', 'convocatoria').default('post'),
     contenido: Joi.string().trim().min(1).max(2000).required(),
+    fotos: Joi.array().items(Joi.string().hex().length(24)).max(10).unique().default([]),
   }),
 };
 

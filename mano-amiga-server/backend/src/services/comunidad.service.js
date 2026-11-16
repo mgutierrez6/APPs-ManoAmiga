@@ -3,6 +3,7 @@ const auditoria = require('../utils/auditoria');
 const { paginar } = require('../utils/paginacion');
 const { Campana, Publicacion, Actividad } = require('../models');
 const permisos = require('./permisos');
+const archivos = require('./archivo.service');
 const dto = require('./dto');
 
 const aPunto = ({ lat, lng }) => ({ type: 'Point', coordinates: [lng, lat] });
@@ -47,7 +48,8 @@ async function buscarProyecto(id) {
 /** GET /proyectos/:id/publicaciones — feed público (RS8). */
 async function listarPublicaciones(proyectoId, q) {
   await buscarProyecto(proyectoId);
-  const filtro = { proyectoId };
+  // Solo novedades: lo que la organización sube a su perfil (fotos) no aparece acá.
+  const filtro = { proyectoId, destino: { $ne: 'perfil' } };
   const res = await paginar(
     Publicacion.find(filtro).sort({ fecha: -1 }).populate({ path: 'autorId', select: 'nombre' }).lean(),
     Publicacion.countDocuments(filtro),
@@ -60,13 +62,16 @@ async function listarPublicaciones(proyectoId, q) {
 async function crearPublicacion(usuario, proyectoId, datos, ctx) {
   const proyecto = await buscarProyecto(proyectoId);
   permisos.assertMismaOrganizacion(usuario, proyecto.doc, { recurso: proyecto.tipo, ip: ctx.ip });
+  const fotos = await archivos.validarPropias(usuario, datos.fotos, 'publicacion'); // solo fotos propias
 
   const pub = await Publicacion.create({
+    fotos,
     proyectoId,
     proyectoTipo: proyecto.tipo,
     organizacionId: usuario.organizacionId,
     autorId: usuario.id,
-    tipo: datos.tipo,
+    tipo: 'post',
+    destino: 'novedad',
     contenido: datos.contenido, // texto plano; la app lo muestra con <Text>, que no interpreta HTML
   });
   await auditoria.registrar({ usuarioId: usuario.id, accion: 'publicacion_crear', recurso: 'publicacion', recursoId: pub._id, resultado: 'ok', ip: ctx.ip });
