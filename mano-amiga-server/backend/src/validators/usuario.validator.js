@@ -19,6 +19,8 @@ const actualizarMe = {
     apellido: Joi.string().trim().min(1).max(60),
     telefono: Joi.string().trim().pattern(/^\+?[0-9 ]{6,20}$/).allow('').messages({ 'string.pattern.base': 'teléfono inválido' }),
     preferencias: Joi.object({ tema: Joi.string().valid('sistema', 'claro', 'oscuro').required() }),
+    // Foto de perfil: un archivo subido por la misma persona (POST /archivos?uso=perfil). null = sacarla.
+    fotoId: Joi.string().hex().length(24).allow(null),
   }).min(1),
 };
 

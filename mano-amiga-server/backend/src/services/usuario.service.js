@@ -3,6 +3,7 @@ const { paginar } = require('../utils/paginacion');
 const { Usuario, Auditoria } = require('../models');
 const dto = require('./dto');
 const { esPushTokenValido } = require('./notificacion.service');
+const archivos = require('./archivo.service');
 
 // /usuarios/me/... siempre toma el id del token, nunca de la URL (RS2).
 async function obtenerPerfil(usuario) {
@@ -27,6 +28,8 @@ async function actualizarPerfil(usuario, datos) {
     if (datos[campo] !== undefined) cambios[campo] = datos[campo];
   }
   if (datos.preferencias && datos.preferencias.tema) cambios['preferencias.tema'] = datos.preferencias.tema;
+  if (datos.fotoId === null) cambios.fotoId = null;
+  else if (datos.fotoId !== undefined) [cambios.fotoId] = await archivos.validarPropias(usuario, [datos.fotoId], 'perfil');
   const u = await Usuario.findByIdAndUpdate(usuario.id, { $set: cambios }, { returnDocument: 'after', runValidators: true }).lean();
   if (!u) throw ApiError.notFound();
   return dto.usuarioPropio(u);

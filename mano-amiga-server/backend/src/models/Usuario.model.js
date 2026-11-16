@@ -20,6 +20,8 @@ const usuarioSchema = new Schema(
       tema: { type: String, enum: ['sistema', 'claro', 'oscuro'], default: 'sistema' },
     },
     pushTokens: { type: [String], default: [], select: false },
+    // Foto de perfil (opcional). Es un Archivo subido por la misma persona.
+    fotoId: { type: Schema.Types.ObjectId, ref: 'Archivo', default: null },
   },
   { timestamps: true, collection: 'usuarios' }
 );

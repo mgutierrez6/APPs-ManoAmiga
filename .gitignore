@@ -22,3 +22,6 @@ expo-env.d.ts
 npm-debug.log*
 .DS_Store
 coverage/
+
+# Fotos subidas en desarrollo (las de producción viven en un volumen de Docker)
+uploads/

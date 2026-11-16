@@ -45,6 +45,11 @@ const config = {
   // Cantidad de proxies delante de la API (el front-service). Así req.ip es la IP real del cliente.
   trustProxy: parseInt(process.env.TRUST_PROXY || '1', 10),
   expoAccessToken: process.env.EXPO_ACCESS_TOKEN || '',
+  // Carpeta donde se guardan las fotos subidas (perfil, organización, publicaciones, historias).
+  // En Docker es un volumen (ver docker-compose.yml). En el futuro se puede cambiar por S3 sin tocar las pantallas.
+  uploadsDir: process.env.UPLOADS_DIR || path.resolve(__dirname, '../../uploads'),
+  // Tamaño máximo de cada foto. La app las achica antes de subirlas (~300 KB), así que 4 MB es holgado.
+  maxFotoBytes: 4 * 1024 * 1024,
 };
 
 module.exports = config;

@@ -42,6 +42,17 @@ export function setAccessToken(token) {
   accessToken = token;
 }
 
+/** Cabecera de autorización para pedidos que no pasan por axios (fotos). */
+export function headersAuth() {
+  return accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
+}
+
+/** Convierte una ruta de la API ("/archivos/abc") en una URL completa. */
+export function urlApi(ruta) {
+  if (!ruta) return null;
+  return /^https?:\/\//.test(ruta) ? ruta : `${API_URL}${ruta}`;
+}
+
 export function onSesionExpirada(callback) {
   alExpirarSesion = callback;
 }

@@ -35,6 +35,8 @@ module.exports = {
       '@react-native-community/datetimepicker',
       ['expo-camera', { cameraPermission: 'Mano Amiga usa la cámara para escanear el código QR de asistencia.', recordAudioAndroid: false }],
       'expo-notifications',
+      // Fotos de perfil, de la organización, de las publicaciones y de "Mi historia". Solo galería (sin cámara).
+      ['expo-image-picker', { photosPermission: 'Mano Amiga usa tus fotos solo cuando elegís una para tu perfil, una publicación o tu historia.', cameraPermission: false, microphonePermission: false }],
       [
         'expo-location',
         {

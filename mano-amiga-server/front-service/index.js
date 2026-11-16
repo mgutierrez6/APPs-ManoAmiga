@@ -26,6 +26,9 @@ const TLS_CERT = process.env.TLS_CERT_PATH; // producción: fullchain.pem de Let
 const TLS_KEY = process.env.TLS_KEY_PATH; // producción: privkey.pem
 const usaTLS = Boolean(TLS_CERT && TLS_KEY);
 const MAX_BODY = 100 * 1024; // 100 KB, igual que la API
+// Única excepción: la subida de fotos (POST /api/v1/archivos). La API vuelve a controlar tamaño y tipo.
+const MAX_FOTO = 4 * 1024 * 1024;
+const esSubidaDeFoto = (req) => req.method === 'POST' && req.path === '/api/v1/archivos';
 
 const app = express();
 app.disable('x-powered-by');
@@ -66,7 +69,7 @@ app.use((req, res, next) => {
 // Cortamos bodies grandes antes de reenviarlos.
 app.use((req, res, next) => {
   const largo = parseInt(req.get('content-length') || '0', 10);
-  if (largo > MAX_BODY) return res.status(413).json({ error: { code: 'DEMASIADO_GRANDE', message: 'El pedido es demasiado grande' } });
+  if (largo > (esSubidaDeFoto(req) ? MAX_FOTO : MAX_BODY)) return res.status(413).json({ error: { code: 'DEMASIADO_GRANDE', message: 'El pedido es demasiado grande' } });
   next();
 });
 
