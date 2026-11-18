@@ -6,13 +6,14 @@ import { registrarPushToken } from '../api/usuarios';
 /**
  * Pide permiso y registra el token de notificaciones push en la API.
  *
- * IMPORTANTE: en Expo Go las notificaciones push remotas NO están disponibles (Android las quitó en el SDK 53).
- * Para probarlas hace falta un "development build" con EAS y el projectId de EAS (Sprint 2).
- * Por eso, dentro de Expo Go esta función no hace nada y la app funciona igual.
+ * IMPORTANTE: en Expo Go para Android las notificaciones push remotas NO están disponibles (se quitaron en el SDK 53).
+ * En Android hace falta el APK (EAS Build). En iPhone se intenta también dentro de Expo Go.
+ * Por eso, en Expo Go para Android esta función no hace nada y la app funciona igual.
  */
-/** ¿Se pueden usar notificaciones push acá? (no en Expo Go ni en el emulador web) */
+/** ¿Se pueden usar notificaciones push acá? (no en la web ni en Expo Go para Android) */
 function pushDisponible() {
-  return Constants.executionEnvironment !== ExecutionEnvironment.StoreClient && Platform.OS !== 'web';
+  if (Platform.OS === 'web') return false;
+  return !(Platform.OS === 'android' && Constants.executionEnvironment === ExecutionEnvironment.StoreClient);
 }
 
 /**
@@ -47,7 +48,7 @@ export function escucharNotificaciones({ alTocar, alRecibir }) {
 
 export async function registrarNotificaciones() {
   try {
-    if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) return null; // Expo Go
+    if (!pushDisponible()) return null;
     if (!Device.isDevice) return null;
 
     const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
