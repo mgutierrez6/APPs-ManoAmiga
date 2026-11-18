@@ -1,4 +1,7 @@
-import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
+import { useEffect, useRef } from 'react';
+import { DeviceEventEmitter } from 'react-native';
+import { DarkTheme, DefaultTheme, NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
+import { escucharNotificaciones } from '../services/notificaciones';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../hooks/useAuth';
@@ -162,14 +165,48 @@ function AppStack({ rol }) {
 // para que la persona siga en la misma pantalla. Se descarta al cambiar de usuario o de rol.
 let navegacionGuardada = { clave: null, estado: undefined };
 
+// Para poder navegar desde fuera de una pantalla (al tocar una notificación push).
+export const navegacion = createNavigationContainerRef();
+
+/** Pantalla a la que lleva una notificación, según lo que manda la API en "data" (igual que en la lista de avisos). */
+function abrirDesdeNotificacion(data, rol) {
+  if (!data || !navegacion.isReady()) return false;
+  const { tipo, actividadId } = data;
+  if (tipo === 'chat' && actividadId) navegacion.navigate('Chat', { id: actividadId });
+  else if (tipo === 'novedad' && actividadId) navegacion.navigate('Feed', { proyectoId: actividadId });
+  else if (actividadId && rol === 'voluntario' && tipo !== 'actividad_cancelada') navegacion.navigate('ActividadDetalle', { id: actividadId });
+  else navegacion.navigate('Avisos');
+  return true;
+}
+
 export default function RootNavigator() {
   const { usuario, cargando } = useAuth();
   const { modo } = useTema();
+  const pendiente = useRef(null); // notificación tocada antes de que la navegación esté lista
+
+  // Al tocar una notificación push (con la app abierta, en segundo plano o cerrada) se abre su pantalla.
+  useEffect(() => {
+    if (!usuario) return undefined;
+    return escucharNotificaciones({
+      alTocar: (data) => {
+        if (!abrirDesdeNotificacion(data, usuario.rol)) pendiente.current = data;
+      },
+      alRecibir: () => DeviceEventEmitter.emit('avisos:actualizar'), // la campanita se actualiza al momento
+    });
+  }, [usuario]);
+
   if (cargando) return <Cargando />;
   const clave = usuario ? `${usuario.id}:${usuario.rol}` : 'anonimo';
   const inicial = navegacionGuardada.clave === clave ? navegacionGuardada.estado : undefined;
   return (
     <NavigationContainer
+      ref={navegacion}
+      onReady={() => {
+        if (pendiente.current && usuario) {
+          abrirDesdeNotificacion(pendiente.current, usuario.rol);
+          pendiente.current = null;
+        }
+      }}
       theme={temaNavegacion(modo)}
       initialState={inicial}
       onStateChange={(estado) => {

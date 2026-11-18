@@ -7,14 +7,26 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "android": { "buildType": "apk" }
+      "android": {
+        "buildType": "apk"
+      }
     },
     "preview": {
       "distribution": "internal",
-      "android": { "buildType": "apk" }
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://manoamiga.duckdns.org/api/v1"
+      }
     },
     "production": {
-      "android": { "buildType": "app-bundle" }
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://manoamiga.duckdns.org/api/v1"
+      }
     }
   }
 }

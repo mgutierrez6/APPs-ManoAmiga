@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { DeviceEventEmitter, Pressable, Text, View } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Icono from './Icono';
 import { avisosSinLeer } from '../api/avisos';
@@ -29,6 +29,12 @@ export default function Campanita() {
       return () => setVisible(false);
     }, [actualizar])
   );
+
+  // Cuando llega una notificación push con la app abierta, se actualiza al momento.
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener('avisos:actualizar', actualizar);
+    return () => sub.remove();
+  }, [actualizar]);
 
   useEffect(() => {
     if (!visible) return undefined;

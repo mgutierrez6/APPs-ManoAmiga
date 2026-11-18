@@ -1,6 +1,8 @@
 # Despliegue en el servidor (EC2) · sección 7 del informe.
 #  - front: único servicio con puertos publicados (443 y 80) -> DMZ
 #  - api y mongo: SIN puertos publicados; solo accesibles por las redes internas de Docker (FW 2)
+#  - La base está en MongoDB Atlas (la instancia gratuita tiene poca RAM): MONGO_URI va en el .env.
+#    El servicio "mongo" solo se levanta si se pide: docker compose --profile mongo-local up -d
 # Levantar:   docker compose up -d --build
 services:
   front:
@@ -25,7 +27,7 @@ services:
       NODE_ENV: production
       PORT: 3000
       HOST: 0.0.0.0
-      MONGO_URI: mongodb://${MONGO_APP_USER}:${MONGO_APP_PASSWORD}@mongo:27017/mano_amiga?authSource=mano_amiga
+      MONGO_URI: ${MONGO_URI}
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       QR_SECRET: ${QR_SECRET}
@@ -34,10 +36,10 @@ services:
     volumes:
       - uploads_data:/app/uploads # fotos subidas (perfil, organización, publicaciones, historias)
     networks: [secure_net, egress_net] # egress_net: salida a Expo Push
-    depends_on: [mongo]
 
   mongo:
     image: mongo:7
+    profiles: ["mongo-local"]
     restart: unless-stopped
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
