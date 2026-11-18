@@ -4,7 +4,13 @@ Guianos para crear el cluster gratuito en Atlas: un usuario para la API con read
 
 Cada vez que cambiamos de red hay que cambiar la IP en el .env de la app. Hacé que la detecte sola en desarrollo.
 
-La interfaz está muy sobria y es una app de voluntariado, queremos que sea alegre. Usá de inspiración superdesigner.co, realtimecolors.com, colorhunt.co, drawkit.com y shapes.co: más colores, figuras decorativas, tipografías redondeadas y animaciones suaves. Decinos qué archivos reemplazar.
+La interfaz está muy sobria y es una app de voluntariado, queremos que sea alegre. Usá de inspiración superdesigner.co, realtimecolors.com, colorhunt.co, drawkit.com y shapes.co: más colores, figuras decorativas, tipografías redondeadas y animaciones suaves. Decinos qué archivos reemplazar. Agregá figuras orgánicas (círculos, manchas, ondas) en los fondos de las cabeceras, en el color del tipo con transparencia. Son solo decoración: no pueden tapar texto ni responder al toque. Animaciones suaves y cortas, de 200 a 400 ms, solo donde ayudan a entender qué pasó: abrir, cerrar o confirmar una acción. Nada que rebote ni que haga esperar. Sin efectos de hover, porque en el celular no hay mouse. 
+
+Usamos cards para cada actividad de la lista, porque juntan foto, tipo, fecha y lugar en un bloque que se toca entero. Pero:
+•	sin sombras pesadas;
+•	nunca una card adentro de otra, porque se pierde la jerarquía y no se entiende qué se toca;
+•	lo que es solo información (por ejemplo "Ya marcaste tu asistencia") va como texto con un ícono, no en una card.
+
 
 Arrancamos el Sprint 2 con R5 (mapa), R15 (admin) y R16 (perfil), más RS5, RS9 y RS10. Queremos revocación inmediata de sesiones con una versión de sesión en el token, reautenticación del admin para las acciones de escritura, el mapa solo con ubicaciones institucionales, perfil con edición de datos, cambio de contraseña e historial de accesos, y la matriz completa con tests.
 
@@ -13,3 +19,9 @@ Agregá tema claro, oscuro y automático, guardado en el perfil del usuario.
 Escribí la guía para desplegar en la instancia gratuita de EC2 respetando la DMZ y la red segura: security group, IP fija, dominio gratis, HTTPS con Let's Encrypt y docker compose. La base queda en Atlas porque la instancia tiene poca RAM.
 
 Preciso que investigues en la web por campañas de donaciones reales, voluntariados, campañas, etc. Y crea un archivo seed .js para cargarlos todos juntos a la pagina desde el back.
+
+El coordinador muestra un QR en su celular y el voluntario lo escanea para marcar que fue. El QR sirve desde 1 hora antes del inicio hasta 2 horas después del fin: antes no tiene sentido, y después ya no es creíble. La regla se controla en la API y no solo en la app, porque la app se puede modificar. Fuera de ese horario, el voluntario ve: "Te esperamos el sábado 22 a las 10:00. Ese día marcás tu asistencia acá". Después de escanear, la asistencia queda "esperando validación" hasta que la confirma el coordinador. El coordinador puede registrar la asistencia a mano, por si a alguien no le anda la cámara, pero solo una vez que empezó la actividad (RS-20). Antes no tiene sentido y se presta a cargar horas falsas. Si la organización cancela una actividad, desaparece de "Mis inscripciones" del voluntario aunque ya tuviera asistencia. Las cancelaciones pasan antes del día y no queremos que ensucien la lista.
+
+
+- chat 
+ -notif
