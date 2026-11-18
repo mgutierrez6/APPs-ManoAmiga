@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "406826249078",
+    "project_id": "mano-amiga-785b9",
+    "storage_bucket": "mano-amiga-785b9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:406826249078:android:8998db0ec1f87e53f72857",
+        "android_client_info": {
+          "package_name": "uy.edu.um.manoamiga"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyApL0TePUJ9herEUMB2xv0hirNNXLo4EPk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

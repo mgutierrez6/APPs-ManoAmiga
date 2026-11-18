@@ -2,7 +2,8 @@
 // La URL de la API va en el archivo .env de la app como EXPO_PUBLIC_API_URL.
 // EAS_PROJECT_ID y GOOGLE_MAPS_API_KEY tampoco son secretos (quedan dentro del APK), pero dependen de
 // la cuenta de cada equipo: se leen del .env (ver .env.example).
-const easProjectId = process.env.EAS_PROJECT_ID;
+// projectId del proyecto en expo.dev (@agusrabajoli/mano-amiga). No es secreto; el .env puede pisarlo.
+const easProjectId = process.env.EAS_PROJECT_ID || '09de2edf-ceb3-457c-bcb4-f097251d0ae6';
 const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY;
 
 module.exports = {
@@ -19,6 +20,8 @@ module.exports = {
     },
     android: {
       package: 'uy.edu.um.manoamiga',
+      // Firebase (FCM): lo necesitan las notificaciones push en Android. No es secreto (Expo recomienda subirlo al repo).
+      googleServicesFile: './google-services.json',
       // react-native-maps en Android usa Google Maps. En Expo Go no hace falta; en el APK sí.
       ...(googleMapsApiKey ? { config: { googleMaps: { apiKey: googleMapsApiKey } } } : {}),
       adaptiveIcon: {
