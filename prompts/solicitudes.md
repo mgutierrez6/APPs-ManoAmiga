@@ -11,8 +11,8 @@ La interfaz está muy sobria y es una app de voluntariado, queremos que sea aleg
 
 
 Usamos cards para cada actividad de la lista, porque juntan foto, tipo, fecha y lugar en un bloque que se toca entero. Pero:
-•	sin sombras pesadas;
-•	nunca una card adentro de otra, porque se pierde la jerarquía y no se entiende qué se toca;
+•	sin sombras pesadas
+•	nunca una card adentro de otra, porque se pierde la jerarquía y no se entiende qué se toca
 •	lo que es solo información (por ejemplo "Ya marcaste tu asistencia") va como texto con un ícono, no en una card.
 
 
@@ -37,4 +37,22 @@ El coordinador muestra un QR en su celular y el voluntario lo escanea para marca
 
 
 Queremos que la app avise cuando pasa algo importante: cuando te aceptan o rechazan en una actividad, cuando se cancela o cambia de fecha o lugar, cuando hay una novedad y cuando llegan mensajes al chat. Pensamos en una campanita con el número de avisos sin leer y una lista donde cada aviso te lleva a su pantalla. Los mensajes del chat irían agrupados para no llenar de avisos. Cada aviso es privado de su dueño y no lleva datos personales. Después queremos que también lleguen como notificación push con la app cerrada.
-Guianos en qué orden conviene hacerlo y qué necesitamos para el push (Expo, Firebase, APK), teniendo en cuenta que todavía no desplegamos. Lo que veas que se puede resolver mejor, hacelo vos y explicanos la decisión.
+
+Guianos en qué orden conviene hacerlo y qué necesitamos para el push (Expo, Firebase, APK). Lo que veas que se puede resolver mejor, hacelo vos y explicanos la decisión.
+
+Preguntas que fuimos haciendo en el flujo del desarrollo de las notificaciones push, las agregamos al ser algo nuevo que nunca hcimos
+
+Cómo funcionan las notificaciones en nuestra app y qué parte hace el servidor y qué parte hace el celular?
+Por qué las push no llegan en Expo Go en Android?
+Explicanos bien EAS, Firebase y FCM, y por qué necesitamos cada uno?
+Donde conviene guardar un token de push?
+Qué pasa si una persona usa la app en más de un dispositivo?
+Conviene mandar una notificación por cada mensaje del chat o agruparlas? ¿Qué ventajas tiene cada opción?
+Cómo evitamos que una notificación muestre datos personales o le llegue a quien no corresponde?
+Qué pasa con la acción principal si falla el envío de la notificación?
+GitHub nos avisó que detectó una clave en google-services.json: ¿es grave, y cómo lo resolvemos?
+El APK se cierra apenas lo abrimos: ¿cómo vemos el error real y lo solucionamos?
+Si cambiamos cómo se mandan las notificaciones, ¿hay que generar otro APK o alcanza con actualizar el servidor?
+Hace falta dejar la tablet conectada por cable para recibir notificaciones?
+Cómo hacemos para que lleguen en iPhone, y qué cambia entre Expo Go y una app propia?
+Si quisiéramos escalar la app, ¿cómo pasamos de mandar un APK a publicarla en Google Play y en la App Store?
