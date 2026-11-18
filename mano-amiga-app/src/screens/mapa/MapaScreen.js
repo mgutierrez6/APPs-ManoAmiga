@@ -8,12 +8,18 @@ import { useTema } from '../../hooks/useTema';
 import { colores, espacio, estilosDinamicos, fuentes, sombra } from '../../constants/tema';
 import { FichaPunto, FiltrosMapa, REGION_INICIAL, colorPunto, iconoPunto, usePuntos } from './comun';
 import Icono from '../../components/Icono';
+import ListaPuntos from './ListaPuntos';
+import { hayMapa } from '../../utils/mapa';
 
 /*
 Mapa de actividades y puntos de acopio (R5).
 Privacidad (RS7): ...
 */
-export default function MapaScreen({ navigation }) {
+export default function MapaScreen(props) {
+  return hayMapa ? <MapaNativo {...props} /> : <ListaPuntos {...props} />;
+}
+
+function MapaNativo({ navigation }) {
   const insets = useSafeAreaInsets();
   const { modo } = useTema();
   const mapa = useRef(null);

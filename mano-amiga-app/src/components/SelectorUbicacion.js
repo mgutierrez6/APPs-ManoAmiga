@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import Icono from './Icono';
@@ -7,6 +7,7 @@ import { Campo } from './ui';
 import { colores, espacio, estilosDinamicos, fuentes } from '../constants/tema';
 import { useTema } from '../hooks/useTema';
 import { REGION_INICIAL } from '../screens/mapa/comun';
+import { hayMapa } from '../utils/mapa';
 
 /** Arma una dirección corta ("Rambla Rep. de Chile 4100, Montevideo") a partir de lo que devuelve el geocoder del celular. */
 function direccionCorta(r) {
@@ -20,6 +21,7 @@ function direccionCorta(r) {
  *  - se escribe la dirección y se busca ("Buscar en el mapa"), o
  *  - se toca el mapa / se arrastra el pin, y la dirección se completa sola.
  * Usa el geocoder del sistema (expo-location): no necesita API key extra.
+ * Sin mapa (APK de Android sin clave): se busca la dirección o se usa "Estoy acá", y se puede revisar en Google Maps.
  *
  * valor = { direccion, lat, lng } (lat/lng como string, igual que el formulario). onChange recibe los campos que cambian.
  */
@@ -60,13 +62,13 @@ export default function SelectorUbicacion({ valor, onChange }) {
       const consulta = /uruguay/i.test(texto) ? texto : `${texto}, Uruguay`;
       const [r] = await Location.geocodeAsync(consulta);
       if (!r) {
-        setAviso('No encontramos esa dirección. Probá agregando la ciudad, o tocá el mapa donde es.');
+        setAviso(hayMapa ? 'No encontramos esa dirección. Probá agregando la ciudad, o tocá el mapa donde es.' : 'No encontramos esa dirección. Probá agregando el número y la ciudad.');
       } else {
         onChange({ lat: String(r.latitude.toFixed(6)), lng: String(r.longitude.toFixed(6)) });
         centrar(r.latitude, r.longitude);
       }
     } catch {
-      setAviso('No pudimos buscar la dirección. Tocá el mapa donde es la actividad.');
+      setAviso(hayMapa ? 'No pudimos buscar la dirección. Tocá el mapa donde es la actividad.' : 'No pudimos buscar la dirección. Revisá la conexión y probá de nuevo.');
     } finally {
       setBuscando(false);
     }
@@ -76,7 +78,7 @@ export default function SelectorUbicacion({ valor, onChange }) {
   const aca = async () => {
     setAviso(null);
     const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') return setAviso('Sin permiso de ubicación. Podés buscar la dirección o tocar el mapa.');
+    if (status !== 'granted') return setAviso(hayMapa ? 'Sin permiso de ubicación. Podés buscar la dirección o tocar el mapa.' : 'Sin permiso de ubicación. Podés buscar la dirección.');
     setBuscando(true);
     try {
       const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
@@ -94,7 +96,8 @@ export default function SelectorUbicacion({ valor, onChange }) {
       <Campo
         etiqueta="Dirección"
         value={valor.direccion}
-        onChangeText={(t) => onChange({ direccion: t })}
+        // Sin mapa, si cambia la dirección hay que volver a buscarla: el punto guardado ya no le corresponde.
+        onChangeText={(t) => onChange(hayMapa ? { direccion: t } : { direccion: t, lat: '', lng: '' })}
         placeholder="Ej.: Rambla Rep. de Chile 4100, Montevideo"
         returnKeyType="search"
         onSubmitEditing={buscar}
@@ -102,7 +105,7 @@ export default function SelectorUbicacion({ valor, onChange }) {
       <View style={styles.acciones}>
         <Pressable accessibilityRole="button" onPress={buscar} disabled={buscando} style={({ pressed }) => [styles.accion, styles.accionPrincipal, pressed && { opacity: 0.7 }]}>
           {buscando ? <ActivityIndicator size="small" color={colores.tinta} /> : <Icono nombre="buscar" color={colores.tinta} tamano={16} />}
-          <Text style={styles.accionTexto}>Buscar en el mapa</Text>
+          <Text style={styles.accionTexto}>{hayMapa ? 'Buscar en el mapa' : 'Buscar dirección'}</Text>
         </Pressable>
         <Pressable accessibilityRole="button" onPress={aca} disabled={buscando} style={({ pressed }) => [styles.accion, pressed && { opacity: 0.7 }]}>
           <Icono nombre="punto" color={colores.tinta} tamano={16} />
@@ -110,6 +113,17 @@ export default function SelectorUbicacion({ valor, onChange }) {
         </Pressable>
       </View>
 
+      {!hayMapa ? (
+        <View>
+          <Text style={styles.ayuda}>{aviso || (hayPin ? 'Ubicación encontrada.' : 'Escribí la dirección y tocá "Buscar dirección".')}</Text>
+          {hayPin ? (
+            <Pressable accessibilityRole="link" hitSlop={8} onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`)}>
+              <Text style={styles.revisar}>Revisar en Google Maps →</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : (
+      <>
       <View style={styles.mapaCaja}>
         <MapView
           ref={mapa}
@@ -128,6 +142,8 @@ export default function SelectorUbicacion({ valor, onChange }) {
         ) : null}
       </View>
       <Text style={styles.ayuda}>{aviso || (hayPin ? 'Si el pin no quedó justo, arrastralo o tocá el lugar exacto.' : 'Buscá la dirección o tocá el mapa.')}</Text>
+      </>
+      )}
     </View>
   );
 }
@@ -141,4 +157,5 @@ const styles = estilosDinamicos(() => ({
   velo: { position: 'absolute', left: 0, right: 0, bottom: 10, alignItems: 'center' },
   veloTexto: { fontFamily: fuentes.semi, fontSize: 12.5, color: colores.tintaFija, backgroundColor: 'rgba(255,255,255,0.9)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, overflow: 'hidden' },
   ayuda: { fontFamily: fuentes.texto, fontSize: 12.5, color: colores.tintaSuave, marginTop: 6 },
+  revisar: { fontFamily: fuentes.negrita, fontSize: 13, color: colores.tinta, marginTop: 6 },
 }));

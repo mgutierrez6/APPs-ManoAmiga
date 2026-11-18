@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { DeviceEventEmitter } from 'react-native';
 import { DarkTheme, DefaultTheme, NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { escucharNotificaciones } from '../services/notificaciones';
+import { hayMapa } from '../utils/mapa';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../hooks/useAuth';
@@ -85,7 +86,7 @@ function VoluntarioTabs() {
   return (
     <Tabs.Navigator screenOptions={opcionesTabs()} tabBar={barra}>
       <Tabs.Screen name="Actividades" component={ActividadesScreen} options={{ title: 'Actividades', tabBarIcono: 'estrella' }} />
-      <Tabs.Screen name="Mapa" component={MapaScreen} options={{ title: 'Mapa', tabBarIcono: 'mapa' }} />
+      <Tabs.Screen name="Mapa" component={MapaScreen} options={{ title: hayMapa ? 'Mapa' : 'Lugares', tabBarIcono: 'mapa' }} />
       <Tabs.Screen name="MisInscripciones" component={MisInscripcionesScreen} options={{ title: 'Inscripciones', tabBarIcono: 'inscripciones' }} />
       <Tabs.Screen name="Calendario" component={CalendarioScreen} options={{ title: 'Calendario', tabBarIcono: 'calendario' }} />
       <Tabs.Screen name="Perfil" component={PerfilScreen} options={{ title: 'Perfil', tabBarIcono: 'perfil' }} />

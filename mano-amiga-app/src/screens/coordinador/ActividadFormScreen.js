@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import Pantalla from '../../components/Pantalla';
 import FechaHoraInput from '../../components/FechaHoraInput';
 import SelectorUbicacion from '../../components/SelectorUbicacion';
+import { hayMapa } from '../../utils/mapa';
 import { Boton, BotonPastilla, Campo, Cargando, Chip, MensajeError, Subtitulo, Tarjeta, TextoSuave } from '../../components/ui';
 import { useCarga } from '../../hooks/useCarga';
 import { crearActividad, editarActividad, listarEtiquetas, obtenerActividad } from '../../api/actividades';
@@ -63,7 +64,7 @@ export default function ActividadFormScreen({ route, navigation }) {
     const lat = parseFloat(form.lat);
     const lng = parseFloat(form.lng);
     const cupo = parseInt(form.cupo, 10);
-    if (Number.isNaN(lat) || Number.isNaN(lng)) return setError('Ubicá la actividad en el mapa (buscá la dirección o tocá el lugar).');
+    if (Number.isNaN(lat) || Number.isNaN(lng)) return setError(hayMapa ? 'Ubicá la actividad en el mapa (buscá la dirección o tocá el lugar).' : 'Tocá "Buscar dirección" para ubicar la actividad.');
     if (!form.ilimitado && (Number.isNaN(cupo) || cupo < 1)) return setError('El cupo debe ser un número mayor a 0 (o elegí "Sin límite")');
     if (form.fechaFin <= form.fechaInicio) return setError('La fecha de fin debe ser posterior a la de inicio');
     if (form.contactoMenores === null) return setError('Respondé si hay contacto con menores.');
