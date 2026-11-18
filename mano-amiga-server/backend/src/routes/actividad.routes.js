@@ -7,6 +7,8 @@ const vs = require('../validators/asistencia.validator');
 const actividad = require('../controllers/actividad.controller');
 const inscripcion = require('../controllers/inscripcion.controller');
 const asistencia = require('../controllers/asistencia.controller');
+const chat = require('../controllers/chat.controller');
+const vc = require('../validators/chat.validator');
 const { TODOS } = require('../security/matriz');
 
 const router = Router();
@@ -27,5 +29,9 @@ router.get('/:id/inscripciones', authorize('coordinador'), validate(vi.listarPor
 router.get('/:id/qr', authorize('coordinador'), validate(vs.porId), asistencia.generarQR);
 router.post('/:id/asistencias', authorize('voluntario'), validate(vs.registrarConQR), asistencia.registrarConQR);
 router.get('/:id/asistencias', authorize('coordinador'), validate(vs.porId), asistencia.listarPorActividad);
+
+// Chat de la actividad: aceptados y coordinadores de la org (se controla en el service)
+router.get('/:id/mensajes', authorize('voluntario', 'coordinador'), validate(vc.listarMensajes), chat.listarMensajes);
+router.post('/:id/mensajes', authorize('voluntario', 'coordinador'), validate(vc.enviarMensaje), chat.enviarMensaje);
 
 module.exports = router;

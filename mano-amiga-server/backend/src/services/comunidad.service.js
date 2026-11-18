@@ -1,7 +1,8 @@
 const ApiError = require('../utils/ApiError');
 const auditoria = require('../utils/auditoria');
 const { paginar } = require('../utils/paginacion');
-const { Campana, Publicacion, Actividad } = require('../models');
+const { Campana, Publicacion, Actividad, Inscripcion } = require('../models');
+const notificaciones = require('./notificacion.service');
 const permisos = require('./permisos');
 const archivos = require('./archivo.service');
 const dto = require('./dto');
@@ -74,6 +75,12 @@ async function crearPublicacion(usuario, proyectoId, datos, ctx) {
     destino: 'novedad',
     contenido: datos.contenido, // texto plano; la app lo muestra con <Text>, que no interpreta HTML
   });
+  if (proyecto.tipo === 'actividad') {
+    // Aviso a los inscriptos (pendientes y aceptados) de esa actividad.
+    const inscriptos = await Inscripcion.find({ actividadId: proyectoId, estado: { $in: ['pendiente', 'aceptada'] } }).distinct('voluntarioId');
+    const act = await Actividad.findById(proyectoId).select('titulo').lean();
+    await notificaciones.avisar(inscriptos, { tipo: 'novedad', titulo: act.titulo, texto: 'Hay una novedad nueva de la organización.', actividadId: proyectoId });
+  }
   await auditoria.registrar({ usuarioId: usuario.id, accion: 'publicacion_crear', recurso: 'publicacion', recursoId: pub._id, resultado: 'ok', ip: ctx.ip });
   const conAutor = await Publicacion.findById(pub._id).populate({ path: 'autorId', select: 'nombre' }).lean();
   return dto.publicacion(conAutor);

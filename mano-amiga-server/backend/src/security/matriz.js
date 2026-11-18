@@ -87,6 +87,15 @@ const matriz = [
   { metodo: 'POST', ruta: '/api/v1/archivos', acceso: 'jwt', roles: TODOS, control: 'Uso según rol · solo JPG/PNG/WEBP (por contenido) · máx. 4 MB · 60 por hora', sprint: 4 },
   { metodo: 'GET', ruta: '/api/v1/archivos/:id', acceso: 'jwt', roles: TODOS, control: 'Perfil e historia: solo el dueño (RS2) · ABAC en fotos de publicaciones', sprint: 4 },
 
+  // --- Chat de la actividad y avisos (Sprint 5) ---
+  { metodo: 'GET', ruta: '/api/v1/actividades/:id/mensajes', acceso: 'jwt', roles: ['voluntario', 'coordinador'], control: 'Inscripción aceptada (titular) + ABAC, o coordinador de la org (RS3)', sprint: 5 },
+  { metodo: 'POST', ruta: '/api/v1/actividades/:id/mensajes', acceso: 'jwt', roles: ['voluntario', 'coordinador'], control: 'Igual que leer · solo lectura si se canceló o terminó hace +7 días · 20 por minuto', sprint: 5 },
+  { metodo: 'DELETE', ruta: '/api/v1/mensajes/:id', acceso: 'jwt', roles: ['voluntario', 'coordinador'], control: 'Autor (RS2) o coordinador de la org (RS3)', sprint: 5 },
+  { metodo: 'GET', ruta: '/api/v1/usuarios/me/notificaciones', acceso: 'jwt', roles: TODOS, control: 'id del token', sprint: 5 },
+  { metodo: 'GET', ruta: '/api/v1/usuarios/me/notificaciones/sin-leer', acceso: 'jwt', roles: TODOS, control: 'id del token', sprint: 5 },
+  { metodo: 'POST', ruta: '/api/v1/usuarios/me/notificaciones/leer-todas', acceso: 'jwt', roles: TODOS, control: 'id del token', sprint: 5 },
+  { metodo: 'PATCH', ruta: '/api/v1/notificaciones/:id/leida', acceso: 'jwt', roles: TODOS, control: 'Titular (RS2)', sprint: 5 },
+
   // --- Infraestructura ---
   { metodo: 'GET', ruta: '/api/v1/health', acceso: 'publico', roles: [], control: 'Sin datos', sprint: 1 },
 ];

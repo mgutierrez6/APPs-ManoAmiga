@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const actividadController = require('../controllers/actividad.controller');
 const comunidad = require('./comunidad.routes');
+const chat = require('./chat.routes');
 
 const api = Router();
 
@@ -22,6 +23,8 @@ const MONTAJES = [
   ['/organizaciones', require('./organizacion.routes')],
   ['/historias', require('./historia.routes')],
   ['/archivos', require('./archivo.routes')],
+  ['/mensajes', chat.mensajes],
+  ['/notificaciones', chat.notificaciones],
 ];
 for (const [prefijo, router] of MONTAJES) api.use(prefijo, router);
 

@@ -11,4 +11,6 @@ module.exports = {
   Auditoria: require('./Auditoria.model'),
   Archivo: require('./Archivo.model'),
   Historia: require('./Historia.model'),
+  Mensaje: require('./Mensaje.model'),
+  Notificacion: require('./Notificacion.model'),
 };

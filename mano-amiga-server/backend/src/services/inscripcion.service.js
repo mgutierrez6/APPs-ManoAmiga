@@ -154,7 +154,10 @@ async function cambiarEstado(usuario, id, nuevoEstado, ctx) {
 
   await auditoria.registrar({ usuarioId: usuario.id, accion: `inscripcion_${nuevoEstado}`, recurso: 'inscripcion', recursoId: ins._id, resultado: 'ok', ip: ctx.ip });
   const act = await Actividad.findById(ins.actividadId).select('titulo').lean();
-  notificaciones.notificar(ins.voluntarioId, 'Tu inscripción cambió', `Tu inscripción a "${act ? act.titulo : 'la actividad'}" fue ${nuevoEstado}`, { inscripcionId: String(ins._id) });
+  const nombre = act ? act.titulo : 'la actividad';
+  await notificaciones.avisar(ins.voluntarioId, nuevoEstado === 'aceptada'
+    ? { tipo: 'inscripcion_aceptada', titulo: '¡Te aceptaron!', texto: `Ya estás confirmado/a en "${nombre}".`, actividadId: ins.actividadId }
+    : { tipo: 'inscripcion_rechazada', titulo: 'Inscripción no aceptada', texto: `Esta vez no quedaste en "${nombre}". ¡Hay muchas actividades más!`, actividadId: ins.actividadId });
 
   return { id: String(actualizada._id), actividadId: String(actualizada.actividadId), estado: actualizada.estado };
 }

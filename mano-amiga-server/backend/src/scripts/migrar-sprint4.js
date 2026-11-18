@@ -13,7 +13,7 @@
  */
 const config = require('../config/env');
 const db = require('../config/db');
-const { Etiqueta, Historia, Archivo, Publicacion, Actividad } = require('../models');
+const { Etiqueta, Historia, Archivo, Publicacion, Actividad, Mensaje, Notificacion } = require('../models');
 
 const CARACTERISTICAS = ['Urgente', 'Apto programa judicial', 'Contacto con menores'];
 
@@ -47,7 +47,7 @@ async function main() {
   }
   console.log(`Publicaciones: ${sinDestino.length} sin destino → ${aPerfil} al perfil de la organización, el resto a Novedades.`);
 
-  for (const modelo of [Historia, Archivo, Publicacion]) await modelo.syncIndexes();
+  for (const modelo of [Historia, Archivo, Publicacion, Mensaje, Notificacion]) await modelo.syncIndexes();
   console.log('Índices creados: historias, archivos, publicaciones.');
 
   await db.desconectar();

@@ -3,7 +3,7 @@ const auditoria = require('../utils/auditoria');
 const { paginar } = require('../utils/paginacion');
 const config = require('../config/env');
 const logger = require('../utils/logger');
-const { Actividad, Etiqueta, Usuario } = require('../models');
+const { Actividad, Etiqueta, Usuario, Inscripcion } = require('../models');
 const permisos = require('./permisos');
 const notificaciones = require('./notificacion.service');
 const dto = require('./dto');
@@ -168,11 +168,19 @@ async function actualizar(usuario, id, datos, ctx) {
 
   // Lista blanca explícita de campos editables (mass assignment).
   // (las etiquetas ya se armaron arriba con armarEtiquetas)
+  const antes = { inicio: +act.fechaInicio, fin: +act.fechaFin, direccion: act.direccion, coords: JSON.stringify(act.ubicacion && act.ubicacion.coordinates) };
   for (const campo of ['titulo', 'descripcion', 'direccion', 'fechaInicio', 'fechaFin', 'cupo']) {
     if (datos[campo] !== undefined) act[campo] = datos[campo];
   }
   if (datos.ubicacion) act.ubicacion = aPunto(datos.ubicacion);
   await act.save();
+
+  const cambioFecha = antes.inicio !== +act.fechaInicio || antes.fin !== +act.fechaFin;
+  const cambioLugar = antes.direccion !== act.direccion || antes.coords !== JSON.stringify(act.ubicacion && act.ubicacion.coordinates);
+  if (cambioFecha || cambioLugar) {
+    const que = cambioFecha && cambioLugar ? 'la fecha y el lugar' : cambioFecha ? 'la fecha' : 'el lugar';
+    await notificaciones.avisar(await inscriptosActivos(act._id), { tipo: 'actividad_cambiada', titulo: act.titulo, texto: `Cambió ${que}. Revisá los datos antes de ir.`, actividadId: act._id });
+  }
 
   await auditoria.registrar({ usuarioId: usuario.id, accion: 'actividad_editar', recurso: 'actividad', recursoId: act._id, resultado: 'ok', ip: ctx.ip });
   return obtener(usuario, act._id, ctx);
@@ -183,9 +191,18 @@ async function eliminar(usuario, id, ctx) {
   const act = await Actividad.findById(id);
   if (!act) throw ApiError.notFound('ACTIVIDAD_NO_ENCONTRADA', 'La actividad no existe');
   permisos.assertMismaOrganizacion(usuario, act, { recurso: 'actividad', ip: ctx.ip }); // RS3
+  const yaCancelada = act.estado === 'cancelada';
   act.estado = 'cancelada';
   await act.save();
+  if (!yaCancelada) {
+    await notificaciones.avisar(await inscriptosActivos(act._id), { tipo: 'actividad_cancelada', titulo: act.titulo, texto: 'La organización canceló esta actividad.', actividadId: act._id });
+  }
   await auditoria.registrar({ usuarioId: usuario.id, accion: 'actividad_cancelar', recurso: 'actividad', recursoId: act._id, resultado: 'ok', ip: ctx.ip });
+}
+
+/** Voluntarios con inscripción pendiente o aceptada: a ellos se les avisa si la actividad cambia o se cancela. */
+async function inscriptosActivos(actividadId) {
+  return Inscripcion.find({ actividadId, estado: { $in: ['pendiente', 'aceptada'] } }).distinct('voluntarioId');
 }
 
 async function listarEtiquetas() {
