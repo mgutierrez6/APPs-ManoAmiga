@@ -10,7 +10,7 @@ import { cambiarEstadoInscripcion, inscriptosDeActividad } from '../../api/inscr
 import { asistenciaManual, asistenciasDeActividad, validarAsistencia } from '../../api/asistencias';
 import { mensajeDeError } from '../../api/client';
 import { colores, espacio, estilosDinamicos, fuentes, tituloGrande } from '../../constants/tema';
-import { estiloTipo } from '../../constants/tipos';
+import { estiloTipo, tipoDe } from '../../constants/tipos';
 import { rangoFechas } from '../../utils/formato';
 
 /** Un color con transparencia (ej.: transparente('#407ADD', 0.25)). */
@@ -123,8 +123,8 @@ export default function GestionActividadScreen({ route, navigation }) {
             <Enlace icono="lapiz" texto="Editar" onPress={() => navigation.navigate('ActividadForm', { id })} />
             {/* Novedades: públicas (las lee cualquiera, aunque no esté anotado); solo publica el coordinador. */}
             <Enlace icono="novedades" texto="Novedades" onPress={() => navigation.navigate('Feed', { proyectoId: id, titulo: act.titulo, organizacionId: act.organizacionId })} />
-            {/* Chat de la actividad (solo inscriptos aceptados + coordinadores): todavía no está hecho. */}
-            <Enlace icono="chat" texto="Chat" onPress={() => Alert.alert('Chat de la actividad', 'Muy pronto: un chat solo para las personas aceptadas y los coordinadores de esta actividad.')} />
+            {/* Chat de la actividad: solo inscriptos aceptados + coordinadores (lo controla la API). */}
+            <Enlace icono="chat" texto="Chat" onPress={() => navigation.navigate('Chat', { id, titulo: act.titulo, tipo: tipoDe(act) })} />
           </View>
           <Pressable
             accessibilityRole="button"

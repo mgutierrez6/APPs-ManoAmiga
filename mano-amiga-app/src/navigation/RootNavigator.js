@@ -38,6 +38,8 @@ import AdminOrganizacionesScreen from '../screens/admin/AdminOrganizacionesScree
 import AdminUsuariosScreen from '../screens/admin/AdminUsuariosScreen';
 import AdminJudicialesScreen from '../screens/admin/AdminJudicialesScreen';
 import AdminAuditoriaScreen from '../screens/admin/AdminAuditoriaScreen';
+import ChatScreen from '../screens/chat/ChatScreen';
+import AvisosScreen from '../screens/avisos/AvisosScreen';
 
 const Stack = createNativeStackNavigator();
 const Tabs = createBottomTabNavigator();
@@ -130,6 +132,8 @@ function AppStack({ rol }) {
       <Stack.Screen name="EditarPerfil" component={EditarPerfilScreen} options={{ title: 'Mis datos' }} />
       <Stack.Screen name="CambiarPassword" component={CambiarPasswordScreen} options={{ title: 'Cambiar contraseña' }} />
       <Stack.Screen name="Accesos" component={AccesosScreen} options={{ title: 'Historial de accesos' }} />
+      <Stack.Screen name="Avisos" component={AvisosScreen} options={{ title: 'Avisos' }} />
+      {rol === 'voluntario' || rol === 'coordinador' ? <Stack.Screen name="Chat" component={ChatScreen} options={sinEncabezado} /> : null}
       {rol === 'voluntario' ? (
         <>
           <Stack.Screen name="EscanearQR" component={EscanearQRScreen} options={{ title: 'Marcar asistencia' }} />

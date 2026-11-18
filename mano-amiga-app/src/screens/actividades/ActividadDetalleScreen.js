@@ -126,6 +126,17 @@ export default function ActividadDetalleScreen({ route, navigation }) {
           >
             <Text style={styles.novedadesTexto}>Novedades de la actividad →</Text>
           </Pressable>
+          {/* El chat es solo para inscriptos aceptados (la API lo vuelve a controlar). */}
+          {miInscripcion && miInscripcion.estado === 'aceptada' ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => navigation.navigate('Chat', { id: act.id, titulo: act.titulo, tipo })}
+              style={({ pressed }) => [styles.chatEnlace, pressed && { opacity: 0.8 }]}
+            >
+              <Icono nombre="chat" color={colores.tinta} tamano={18} />
+              <Text style={styles.chatEnlaceTexto}>Chat del grupo  →</Text>
+            </Pressable>
+          ) : null}
         </View>
       </ScrollView>
 
@@ -225,6 +236,9 @@ const styles = estilosDinamicos(() => ({
   etiquetas: { flexDirection: 'row', flexWrap: 'wrap', marginTop: espacio.m },
   novedades: { marginTop: espacio.m, paddingVertical: espacio.s },
   novedadesTexto: { fontFamily: fuentes.negrita, fontSize: 14, color: colores.tintaSuave },
+  // Cardcita rosada chiquita (solo para inscriptos aceptados)
+  chatEnlace: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: espacio.s, backgroundColor: colores.coralSuave, borderRadius: 16, paddingVertical: 10, paddingHorizontal: 14 },
+  chatEnlaceTexto: { fontFamily: fuentes.negrita, fontSize: 14, color: colores.tinta },
 
   barra: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', alignItems: 'center', gap: 16, backgroundColor: colores.tarjeta, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingTop: 14, paddingHorizontal: 20 },
   estado: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 18, paddingVertical: 12, paddingHorizontal: 14, marginVertical: 5 },

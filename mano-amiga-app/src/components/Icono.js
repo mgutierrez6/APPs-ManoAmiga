@@ -175,13 +175,15 @@ const DIBUJOS = {
       <Path d="M7.5 9h6M7.5 12.5h6M7.5 16h4" />
     </>
   ),
-  // Reservado para las notificaciones (todavía no se usa).
+  // Campanita de los avisos.
   campana: () => (
     <>
       <Path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" />
       <Path d="M10 20.5a2 2 0 0 0 4 0" />
     </>
   ),
+  // Avión de papel: mandar un mensaje del chat.
+  enviar: () => <Path d="M21 3 3 10.5l7 2.5 2.5 7L21 3zM10 13l5-5" />,
   taza: () => (
     <>
       <Path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z" />

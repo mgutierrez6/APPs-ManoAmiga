@@ -3,6 +3,7 @@ import { FlatList, Pressable, RefreshControl, ScrollView, Text, View } from 'rea
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ActividadCard from '../../components/ActividadCard';
 import Icono from '../../components/Icono';
+import Campanita from '../../components/Campanita';
 import { LogoMarca } from '../../components/Logo';
 import { Avatar, Cargando, Chip, MensajeError, Vacio } from '../../components/ui';
 import { useCarga } from '../../hooks/useCarga';
@@ -68,9 +69,12 @@ export default function ActividadesScreen({ navigation }) {
       <View style={[styles.saludo, { paddingTop: insets.top + espacio.xl }]}>
         <View style={styles.saludoFila}>
           <Text style={styles.hola}>Hola, {usuario.nombre}</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel="Ir a mi perfil" onPress={() => navigation.navigate('Perfil')}>
-            <Avatar nombre={usuario.nombre} tamano={38} />
-          </Pressable>
+          <View style={styles.saludoAcciones}>
+            <Campanita />
+            <Pressable accessibilityRole="button" accessibilityLabel="Ir a mi perfil" onPress={() => navigation.navigate('Perfil')}>
+              <Avatar nombre={usuario.nombre} tamano={38} />
+            </Pressable>
+          </View>
         </View>
         <Text style={styles.titulo}>¡Dá una mano!</Text>
         {/* Siempre en un solo renglón: si no entra, la letra se achica un poco sola. */}
@@ -154,6 +158,7 @@ const styles = estilosDinamicos(() => ({
   lista: { paddingBottom: espacio.xl, flexGrow: 1 },
   saludo: { paddingHorizontal: espacio.xl },
   saludoFila: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  saludoAcciones: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   hola: { fontFamily: fuentes.texto, fontSize: 14, color: colores.tintaSuave },
   titulo: { ...tituloGrande(52), color: colores.tinta, marginTop: espacio.s },
   bajada: { fontFamily: fuentes.texto, fontSize: 14, color: colores.tintaSuave, marginTop: 6 },

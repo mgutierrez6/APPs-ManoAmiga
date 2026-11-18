@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import Hero from '../../components/Hero';
+import Campanita from '../../components/Campanita';
 import { Aparecer, Boton, Cargando, EstadoBadge, MensajeError, Segmentos, Vacio } from '../../components/ui';
 import { useCarga } from '../../hooks/useCarga';
 import { useAuth } from '../../hooks/useAuth';
@@ -39,7 +40,7 @@ export default function MisActividadesScreen({ navigation }) {
       refreshControl={<RefreshControl refreshing={cargando && !!datos} onRefresh={recargar} tintColor={colores.coral} />}
       ListHeaderComponent={
         <>
-          <Hero antetitulo={org.datos?.nombre || `Hola, ${usuario.nombre}`} titulo={'Mis\nactividades'} />
+          <Hero antetitulo={org.datos?.nombre || `Hola, ${usuario.nombre}`} titulo={'Mis\nactividades'} derecha={<Campanita />} />
           <View style={styles.relleno}>
             <Boton titulo="Nueva actividad" icono="mas" onPress={() => navigation.navigate('ActividadForm')} />
 
