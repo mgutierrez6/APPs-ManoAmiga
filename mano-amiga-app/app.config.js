@@ -34,6 +34,9 @@ module.exports = {
     },
     web: { favicon: './assets/favicon.png' },
     plugins: [
+      // Sin R8 en el APK: al minificar borraba clases que WorkManager (lo usan las notificaciones) busca
+      // al arrancar, y la app se cerraba apenas abría. El APK queda un poco más grande.
+      ['expo-build-properties', { android: { enableMinifyInReleaseBuilds: false, enableShrinkResourcesInReleaseBuilds: false } }],
       'expo-secure-store',
       'expo-sharing',
       '@react-native-community/datetimepicker',
