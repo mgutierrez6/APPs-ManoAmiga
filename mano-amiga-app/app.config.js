@@ -20,8 +20,9 @@ module.exports = {
     },
     android: {
       package: 'uy.edu.um.manoamiga',
-      // Firebase (FCM): lo necesitan las notificaciones push en Android. No es secreto (Expo recomienda subirlo al repo).
-      googleServicesFile: './google-services.json',
+      // Firebase (FCM): lo necesitan las notificaciones push en Android. NO está en el repo (tiene una API key):
+      // en EAS Build llega como variable de tipo archivo (GOOGLE_SERVICES_JSON); en la compu, el archivo local.
+      googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
       // react-native-maps en Android usa Google Maps. En Expo Go no hace falta; en el APK sí.
       ...(googleMapsApiKey ? { config: { googleMaps: { apiKey: googleMapsApiKey } } } : {}),
       adaptiveIcon: {

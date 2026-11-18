@@ -42,3 +42,6 @@ yarn-error.*
 
 # archivo con la IP de cada uno
 .env
+
+# Firebase: tiene una API key; se le pasa a EAS como variable de tipo archivo (GOOGLE_SERVICES_JSON)
+google-services.json
